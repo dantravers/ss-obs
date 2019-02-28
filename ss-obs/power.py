@@ -13,8 +13,6 @@ import configparser
 from datetime import timedelta
 from dbconnector import DBConnector
 import sys
-sys.path.append('C:/Users/Dan Travers/Documents/GitHub/ss-obs/ss-obs')
-sys.path.append('ss-obs/')
 from sitedata import SiteData, check_missing_hours
 
 class Power(SiteData):
@@ -52,7 +50,7 @@ class Power(SiteData):
             Contents are described in the power_config_writer.py module.
         """
         super(Power, self).__init__()
-        self.config.read('pvstream.ini')
+        self.config.read('C:/Users/Dan Travers/Documents/GitHub/ss-obs/ss-obs/pvstream.ini')
         # update config file for any local configs passed in:
         for section in self.config:
             if section in local_config:
@@ -106,7 +104,7 @@ class Power(SiteData):
         Parameters
         ----------
         site_id : int
-            src_id being queried
+            ss_id being queried
         start_date : date
             Start date from which to load in data.  Loads data including and above start date.  
         end_date : date

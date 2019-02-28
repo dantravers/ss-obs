@@ -52,7 +52,7 @@ class ModelRun2:
         If True, the power from the list (assuming len>1) is averaged to create the target.  
         If False, the power from the list (assuming len>1) is summed to create the target.
     observation_freq : 'str'
-        Frequency of observations to use in analysis.  Default to 1H. 
+        Frequency of observations used as input to use in analysis.  Default to 1H. 
     log_target : Boolean
         If true, train on the log of the target, otherwise no change to target.
     solar_geometry : Three states {'solar', 'both', ''}

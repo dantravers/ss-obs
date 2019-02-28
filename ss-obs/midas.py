@@ -13,8 +13,6 @@ import configparser
 from datetime import timedelta
 from dbconnector import DBConnector
 import sys
-sys.path.append('C:/Users/Dan Travers/Documents/GitHub/ss-obs/ss-obs')
-sys.path.append('ss-obs/')
 from sitedata import SiteData, check_missing_hours
 
 class Midas(SiteData): 
@@ -28,8 +26,6 @@ class Midas(SiteData):
     ----------
     metadata : dataframe
         The metadata dictionary is keyed on site_id and for each site_id contains (latitude, longitude).
-        **We could add to this information such as start and end dates of the readings in db.  And last updated?
-        ** do we put all the src_ids in teh dictionary and then just have an "included" list in a separate object?
     obs : dataframe
         Three dimensional dataframe containing the readings of the src locations in the dictionary.
         Multi-indexed by src_id & datetime (hourly) and with the variables as columns.
@@ -51,7 +47,7 @@ class Midas(SiteData):
         """
         super(Midas, self).__init__()
         self.config = configparser.ConfigParser()
-        self.config.read('midas.ini')
+        self.config.read('C:/Users/Dan Travers/Documents/GitHub/ss-obs/ss-obs/midas.ini')
         # update config file for any local configs passed in:
         for section in self.config:
             if section in local_config:

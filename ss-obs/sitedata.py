@@ -38,7 +38,6 @@ class SiteData:
         """
 
         self.config = configparser.ConfigParser()
-        #self.config.read('power.ini')
         self.periods_per_day = 24
         self.metadata = pd.DataFrame([])
         self.obs = pd.DataFrame([])
@@ -127,12 +126,10 @@ class SiteData:
     
     def load_observations(self, site_list, start_date=None, end_date=datetime.datetime.now().date()\
     , date_ranges={}, goto_db=''):
-        """ Method to load power observations from db or cache for specified date range into Power object.
+        """ Method to load observations from db or cache for specified date range into dataframe.
         Method populates data in self.obs dataframe.
         The method always forces data in memory to be refreshed from the cache.  
         Data stored in memory is always overwritten.
-        ** This method should be refactored to be in a parent class and inherited into Midas 
-        and Power classes, as is identical.
 
         Parameters
         ----------
@@ -185,7 +182,8 @@ class SiteData:
                     self.load_obs_db(site_id, last_date, site_end)           
             try:
                 # verbosity = 1 for below - I.e. show most the time.
-                check_missing_hours(self.obs.loc[site_id].tz_localize(None).loc[site_start.strftime('%Y%m%d'):site_end.strftime('%Y%m%d')],\
+                check_missing_hours(self.obs.loc[site_id].tz_localize(None).\
+                    loc[site_start.strftime('%Y%m%d'):(site_end-timedelta(1)).strftime('%Y%m%d')],\
                     site_start, site_end, 'From db & cache:', site_id, periods_per_day=self.periods_per_day)
             except KeyError:
                 print('Key {} not loaded into observations'.format(site_id))
@@ -289,6 +287,9 @@ def fetch_start_end_dates(id, start_date, end_date, date_ranges={}):
 
 def check_missing_hours(df, start_date, end_date, type='-', id='Missing ID', periods_per_day=24):
     """ Utility function to print statements on how many dates have been found
+    ** This has a slight bug in that if the dataframe sent through is trimmed by dates, the last
+    hh of the final day isn't sent through and it can misleadingly show 1 period missing.
+    Not a problem as the data is really there.
     """
     print('{} {}: {} ({} days & {} hours) full observations from {} ({} days) requested'.\
           format(type, id, len(df), np.trunc(len(df)/periods_per_day), len(df)-periods_per_day*np.trunc(len(df)/periods_per_day), periods_per_day*(end_date - start_date).days, \
