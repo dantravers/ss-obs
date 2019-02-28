@@ -31,7 +31,7 @@ default_earliest_date : date
     If no dates are specified for loading, this is the default start date to fall back onto.  The default end date is the date today.
 """
 config['dbc'] = {}
-config['dbc']['mysql_midas_options'] = "mysql_defaults.ssfdb2.readwrite.midas"
+config['dbc']['mysql_midas_options'] = "C:/Users/Dan Travers/Google Drive/Projects/Setup_data/mysql_defaults.ssfdb2.readwrite.midas"
 config['hdf5'] = {}
 config['hdf5']['store_name'] = "midas.h5"
 config['hdf5']['store_path'] = ""

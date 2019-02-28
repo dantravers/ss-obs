@@ -12,7 +12,10 @@ import datetime
 import configparser
 from datetime import timedelta
 from dbconnector import DBConnector
-from sitedata import SiteData, fetch_start_end_dates, check_missing_hours
+import sys
+sys.path.append('C:/Users/Dan Travers/Documents/GitHub/ss-obs/ss-obs')
+sys.path.append('ss-obs/')
+from sitedata import SiteData, check_missing_hours
 
 class Power(SiteData):
     """ Stores power readings from ss_id database.
@@ -49,13 +52,13 @@ class Power(SiteData):
             Contents are described in the power_config_writer.py module.
         """
         super(Power, self).__init__()
-        self.config.read('power.ini')
+        self.config.read('pvstream.ini')
         # update config file for any local configs passed in:
         for section in self.config:
             if section in local_config:
                 self.config[section].update(local_config[section])
         self.default_earliest_date = datetime.datetime.strptime(self.config['query_settings']['default_earliest_date'], '%Y-%m-%d').date()
-        self.dbc = DBConnector(self.config['dbc']['mysql_power_options'], session_tz="UTC")
+        self.dbc = DBConnector(self.config['dbc']['mysql_pvstream_options'], session_tz="UTC")
         self.power_type = power_type
         self.periods_per_day = (24 * 60) / int(self.power_type[0:2])
 

@@ -12,7 +12,10 @@ import datetime
 import configparser
 from datetime import timedelta
 from dbconnector import DBConnector
-from sitedata import SiteData, fetch_start_end_dates, check_missing_hours
+import sys
+sys.path.append('C:/Users/Dan Travers/Documents/GitHub/ss-obs/ss-obs')
+sys.path.append('ss-obs/')
+from sitedata import SiteData, check_missing_hours
 
 class Midas(SiteData): 
     """ Stores weather data readings from Midas stations and relevant meta-data
