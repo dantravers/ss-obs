@@ -7,7 +7,7 @@
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib
 import os
 import datetime
 import configparser
@@ -27,9 +27,15 @@ class SiteData:
         obs : dataframe
             Three dimensional dataframe containing the readings of the sites in the metadata.
             Multi-indexed by site_id & datetime with the outturn / load in the single column.
+        verbose: int
+            Verbosity to control the level of printed output.  
+            0 = None
+            1 = Errors
+            2 = Significant information
+            3 = All messages and logging information
     """
 
-    def __init__(self):
+    def __init__(self, verbose=2):
         """ init initalizes an object with no data.
 
         Notes 
@@ -42,6 +48,7 @@ class SiteData:
         self.metadata = pd.DataFrame([])
         self.obs = pd.DataFrame([])
         self.default_earliest_date = datetime.datetime(2010, 1, 1).date()
+        self.verbose = verbose
 
     def load_data(self, site_list, start_date=None, end_date=datetime.datetime.now().date()\
     , date_ranges={}, goto_db=''):
@@ -98,7 +105,7 @@ class SiteData:
             # look for data in cache if goto_db parameter is not 'Always'
             if goto_db != 'Always': 
                 try:
-                    with pd.HDFStore(hdf_config['store_name'], 'r') as hdf:
+                    with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'r') as hdf:
                         temp = hdf.select(hdf_config['meta_hdf_key'], where = 'index = site_id_short')
                     self.metadata = self.metadata.append(temp, sort=False)
                     site_id_short = [site_id for site_id in site_id_short if site_id not in self.metadata.index.values]
@@ -108,9 +115,9 @@ class SiteData:
             if (goto_db  != 'Never') & (len(site_id_short) > 0):
                 self.load_metadata_db(site_id_short)
             site_list_loaded = [site_id for site_id in site_list if site_id in self.metadata.index.values]
-            print('Loaded metadata for {} / {} locations requested'.format(len(site_list_loaded), len(site_list)))
+            self.myprint('Loaded metadata for {} / {} locations requested'.format(len(site_list_loaded), len(site_list)), 2)
         else:
-            print("All sites' metadata requested already loaded.")
+            self.myprint("All sites' metadata requested already loaded.", 2)
 
     def load_metadata_db(self, site_list):
         """ Loads metadata for ss_id stations from db and appends to self.metadata
@@ -157,39 +164,43 @@ class SiteData:
             start_date = self.default_earliest_date
         for site_id in site_list:
             site_start, site_end = fetch_start_end_dates(site_id, start_date, end_date, date_ranges)
-            first_date = last_date = site_end 
-            print('--site_ids: {}'.format(site_id)) # verbosity = 3
-            if goto_db != 'Always': 
-            # look for data in cache if goto_db parameter is not 'Always'
-                temp = pd.DataFrame([])
-                with pd.HDFStore(hdf_config['store_name'], 'r') as hdf:
-                    temp = hdf.select(hdf_config['obs_hdf_key'], where = 'site_id = site_id')
-                if len(temp) > 0: 
-                    self.obs = self.obs.append(temp, sort=False)
-                    self.obs = self.obs[~self.obs.index.duplicated(keep='first')]
-                    first_date = temp.loc[site_id, :].index.min().date() # first_date is date of first values in df
-                    last_date = temp.loc[site_id, :].index.max().date()  # last_date is date after values in df
-                    # verbosity = 3 for below - I.e. show little.
-                    print('Found & loaded {} observations: {} days, {} hours from cache.'.\
-                    format(len(temp), \
-                    np.trunc(len(temp)/self.periods_per_day), \
-                    len(temp)-self.periods_per_day*np.trunc(len(temp)/self.periods_per_day)))
-            if goto_db  != 'Never':
-            # goto db to fetch remaining data if goto_db parameter is not equal to 'Never'
-                if site_start < first_date:
-                    self.load_obs_db(site_id, site_start, first_date)
-                if last_date < site_end:
-                    self.load_obs_db(site_id, last_date, site_end)           
-            try:
-                # verbosity = 1 for below - I.e. show most the time.
-                check_missing_hours(self.obs.loc[site_id].tz_localize(None).\
-                    loc[site_start.strftime('%Y%m%d'):(site_end-timedelta(1)).strftime('%Y%m%d')],\
-                    site_start, site_end, 'From db & cache:', site_id, periods_per_day=self.periods_per_day)
+            self.myprint('--site_ids: {}'.format(site_id), 2)
+            # ** for each site look at the first and last dates in the obs df and get more data if required.
+            try: 
+                first_date = self.obs.loc[site_id, :].index.min().date() # date of first values in obs
+                last_date = self.obs.loc[site_id, :].index.max().date()  # date of last values in obs
             except KeyError:
-                print('Key {} not loaded into observations'.format(site_id))
-            # ** The check missing hours here is for the Full data set (cache and db)
-            # Doesn't look for small gaps in the data between the first and last dates visible.
-            # This is becasue there are often small gaps of 1 day or so - too hard to find.
+                first_date = last_date = site_end 
+            if (site_start < first_date) or (site_end > last_date): # goto cache and/or db if date range not covered
+                if goto_db != 'Always': 
+                # look for data in cache if goto_db parameter is not 'Always'
+                    temp = pd.DataFrame([])
+                    with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'r') as hdf:
+                        temp = hdf.select(hdf_config['obs_hdf_key'], where = 'site_id = site_id')
+                    if len(temp) > 0: 
+                        self.obs = self.obs.append(temp, sort=False)
+                        self.obs = self.obs[~self.obs.index.duplicated(keep='first')]
+                        first_date = self.obs.loc[site_id, :].index.min().date() # first_date is date of first values in df
+                        last_date = self.obs.loc[site_id, :].index.max().date()  # last_date is date after values in df
+                        self.myprint('Found & loaded {} observations: {} days, {} hours from cache.'.\
+                        format(len(temp), \
+                        np.trunc(len(temp)/self.periods_per_day), \
+                        len(temp)-self.periods_per_day*np.trunc(len(temp)/self.periods_per_day)), 2)
+                if goto_db  != 'Never':
+                # goto db to fetch remaining data if goto_db parameter is not equal to 'Never'
+                    if site_start < first_date:
+                        self.load_obs_db(site_id, site_start, first_date)
+                    if last_date < site_end:
+                        self.load_obs_db(site_id, last_date, site_end)           
+                try:
+                    check_missing_hours(self.obs.loc[site_id].tz_localize(None).\
+                        loc[site_start.strftime('%Y%m%d'):(site_end-timedelta(1)).strftime('%Y%m%d')],\
+                        site_start, site_end, 'From db & cache:', site_id, periods_per_day=self.periods_per_day, verbose_setting=self.verbose)
+                except KeyError:
+                    self.myprint('Key {} not loaded into observations'.format(site_id), 1)
+                # ** The check missing hours here is for the Full data set (cache and db)
+                # Doesn't look for small gaps in the data between the first and last dates visible.
+                # This is becasue there are often small gaps of 1 day or so - too hard to find.
             
     def load_obs_db(self, site_id, start_date, end_date, graph=False):
         """ Method for loading data from the db for a single site_id.
@@ -216,10 +227,10 @@ class SiteData:
             When loading many sites however graphing consumes memory and can be confusing.
         """
         # Graph to show the daily data gathered from the db
-        if graph: 
-            daily_data = self.obs.groupby(pd.Grouper(freq='D')).count()
-            plt.figure(figsize=(16,1))
-            plt.plot(daily_data)
+        #if graph: 
+        #    daily_data = self.obs.groupby(pd.Grouper(freq='D')).count()
+        #    plt.figure(figsize=(16,1))
+        #    plt.plot(daily_data)
 
     def save_to_hdf(self):
         """ Method to save observation data and metadata to hdf.
@@ -248,30 +259,54 @@ class SiteData:
             hdf_key = hdf_config['obs_hdf_key']
             data = self.obs.copy()
 
-        with pd.HDFStore(hdf_config['store_name'], 'r') as hdf:
+        with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'r') as hdf:
             try:
                 current = hdf.get(hdf_key)
                 data = data.append(current, sort=False)
                 data = data[~data.index.duplicated(keep='last')]
-                print('{} rows already in hdf {} /{}'.format(current.shape[0], hdf_config['store_name'], hdf_key))
-#            except AttributeError: 
-#                print('     Replacing empty hdf')
+                self.myprint('{} rows already in hdf {} /{}'.format(current.shape[0], os.path.join(hdf_config['store_path'],hdf_config['store_name']), hdf_key), 2)
             except KeyError: 
-                print('     New hdf file {}'.format(hdf_key))
+                self.myprint('     New hdf file {}'.format(hdf_key), 3)
             hdf.close()
-        with pd.HDFStore(hdf_config['store_name'], 'a') as hdf:    
+        with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'a') as hdf:    
             hdf.put(hdf_key, data, format='Table', data_columns=True)
-#            try: 
-#                hdf.get_storer(save_path).attrs.time_updated=datetime.datetime.now()
-#            except AttributeError:
-#                print('     No results to save')
             hdf.get_storer(hdf_key).attrs.time_updated=datetime.datetime.utcnow()
-            print('Saved {} rows to hdf store {} /{}'.format(data.shape[0], hdf_config['store_name'], hdf_key))
+            self.myprint('Saved {} rows to hdf store {} /{}'.format(data.shape[0], os.path.join(hdf_config['store_path'],hdf_config['store_name']), hdf_key), 1)
             hdf.close()
 
     def get_obs(self, start_date, end_date, freq):
         # function to return a dataframe of data aggregated to appropriate level 
         pass
+
+    def store_summary(self):
+        """ Function to return the summary of the observation data stored in the cache.
+        The result will contain a row for each site_id and the start and end dates of data stored.
+        As usual, data includes the start date, but is all data before the end date.
+        """
+        hdf_config = self.config['hdf5']
+        with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'r') as hdf:
+            index = hdf.select(hdf_config['obs_hdf_key']).index     
+        temp = pd.DataFrame(index=index).reset_index(level=1)
+        temp.columns = ['datetime']
+        return(temp['datetime'].dt.date.groupby('site_id').agg([min, max]))
+
+    def myprint(self, message, message_priority):
+        """ Method to print messages filtered by verbosity.
+        The verbosity setting is a class attribute and should be in range [0:3]
+
+        parameters
+        ----------
+        message : str
+            Message to be printed (or not if not important enough).
+        message_priority : int
+            Nothing should have priority 0, so there is a completely queit mode. 
+            Errors should be sent with message_priority = 1, 
+            Serious information / warning, message_priority = 2, 
+            Information, message_priority = 3.
+        """
+
+        if message_priority<=self.verbose:
+            print(message)
 
 def fetch_start_end_dates(id, start_date, end_date, date_ranges={}):
     """ function to return start and end dates for specific site based on 
@@ -285,15 +320,17 @@ def fetch_start_end_dates(id, start_date, end_date, date_ranges={}):
         end = end_date
     return(start, end)
 
-def check_missing_hours(df, start_date, end_date, type='-', id='Missing ID', periods_per_day=24):
+def check_missing_hours(df, start_date, end_date, type='-', id='Missing ID', periods_per_day=24, verbose_setting=3):
     """ Utility function to print statements on how many dates have been found
     ** This has a slight bug in that if the dataframe sent through is trimmed by dates, the last
     hh of the final day isn't sent through and it can misleadingly show 1 period missing.
     Not a problem as the data is really there.
     """
-    print('{} {}: {} ({} days & {} hours) full observations from {} ({} days) requested'.\
+    if 3<=verbose_setting: 
+        print('{} {}: {} ({} days & {} hours) full observations from {} ({} days) requested'.\
           format(type, id, len(df), np.trunc(len(df)/periods_per_day), len(df)-periods_per_day*np.trunc(len(df)/periods_per_day), periods_per_day*(end_date - start_date).days, \
                  (end_date-start_date).days))
-    print('     {} {}: Missing {} observations from requested period'.\
+    if 3<=verbose_setting:
+        print('     {} {}: Missing {} observations from requested period'.\
               format(type, id, periods_per_day*(end_date-start_date).days - len(df)))
     return

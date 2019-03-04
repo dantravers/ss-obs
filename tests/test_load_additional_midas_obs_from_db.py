@@ -25,7 +25,7 @@ with pd.HDFStore(hdf_bench, 'r') as hdf:
 with pd.HDFStore(hdf_bench, 'r') as hdf:
     weather_metadata_bench = hdf.select('metadata')
 
-weather = midas.Midas()
+weather = midas.Midas(1)
 weather.config['hdf5']['store_name'] = hdf_scratch
 weather.load_data([842, 676, 384], s, e,  goto_db='')
 
@@ -35,7 +35,7 @@ pd.testing.assert_frame_equal(weather.obs.sort_index(), weather_obs_bench.sort_i
 
 # save results to hdf, then create new object and lift results from hdf
 weather.save_to_hdf()
-weather2 = midas.Midas()
+weather2 = midas.Midas(1)
 weather2.config['hdf5']['store_name'] = hdf_scratch
 weather2.load_data([842, 676, 384], s, e,  goto_db='Never')
 pd.testing.assert_frame_equal(weather2.metadata.sort_index(level=0), weather_metadata_bench.sort_index(level=0))

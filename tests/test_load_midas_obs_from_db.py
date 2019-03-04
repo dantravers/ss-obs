@@ -13,7 +13,7 @@ with pd.HDFStore('c:/Users/Dan Travers/Documents/GitHub/ss-obs/tests/midas_2site
     weather_obs_bench = hdf.select('obs')
 with pd.HDFStore('c:/Users/Dan Travers/Documents/GitHub/ss-obs/tests/midas_2sites_2days.h5', 'r') as hdf:
     weather_meta_bench = hdf.select('metadata')
-weather = midas.Midas()
+weather = midas.Midas(1)
 weather.load_data([842, 676], s, e,  goto_db='Always')
 
 pd.testing.assert_frame_equal(weather.metadata, weather_meta_bench)

@@ -1,4 +1,4 @@
-## Statistics functions for Model_run_new.py
+## Statistics functions for Model_run.py
 
 import datetime
 from datetime import timedelta

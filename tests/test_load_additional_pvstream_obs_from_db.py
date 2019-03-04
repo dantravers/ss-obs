@@ -25,7 +25,7 @@ with pd.HDFStore(hdf_bench, 'r') as hdf:
 with pd.HDFStore(hdf_bench, 'r') as hdf:
     power_metadata_bench = hdf.select('metadata')  
 
-pw = power.Power()
+pw = power.Power(1)
 pw.config['hdf5']['store_name'] = hdf_scratch
 pw.load_data([3111, 6730, 8441], s, e,  goto_db='')
 
@@ -35,7 +35,7 @@ pd.testing.assert_frame_equal(pw.obs.sort_index(), power_obs_bench.sort_index())
 
 # save results to hdf, then create new object and lift results from hdf
 pw.save_to_hdf()
-pw2 = power.Power()
+pw2 = power.Power(1)
 pw2.config['hdf5']['store_name'] = hdf_scratch
 pw2.load_data([3111, 6730, 8441], s, e,  goto_db='Never')
 pd.testing.assert_frame_equal(pw2.metadata.sort_index(level=0), power_metadata_bench.sort_index(level=0))

@@ -34,7 +34,7 @@ config['dbc'] = {}
 config['dbc']['mysql_midas_options'] = "C:/Users/Dan Travers/Google Drive/Projects/Setup_data/mysql_defaults.ssfdb2.readwrite.midas"
 config['hdf5'] = {}
 config['hdf5']['store_name'] = "midas.h5"
-config['hdf5']['store_path'] = ""
+config['hdf5']['store_path'] = "C:\\Users\\Dan Travers\\Documents\\dbs\\hdf5"
 config['hdf5']['meta_hdf_key'] = 'metadata'
 config['hdf5']['obs_hdf_key'] = 'obs'
 config['query_settings'] = {}
@@ -47,6 +47,6 @@ config['query_settings']['metadata_object_cols'] = 'site_id, src_name, lat, long
 config['query_settings']['version_num'] = '1'
 config['query_settings']['met_domain_names'] = "'AWSHRLY', 'AWSWIND', 'ESAWWIND', 'HWNDAUTO', 'WINDMEAN', 'SYNOP', 'NCM', 'HSUN3445', 'DLY3208', 'CAWS', 'METAR'"
 config['query_settings']['default_earliest_date'] = '2018-01-01'
-with open('midas.ini', 'w') as configfile:
+with open('C:\\Users\\Dan Travers\\Documents\\GitHub\\ss-obs\\ss-obs\\midas.ini', 'w') as configfile:
     config.write(configfile)
 

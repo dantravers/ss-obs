@@ -1,4 +1,4 @@
-# Module containing the ModelRun2 class
+# Module containing the ModelRun class
 # This class builds up the necessary data and runs a cross validation using chosen ML
 # method.  
 import pandas as pd
@@ -11,13 +11,7 @@ from power import Power
 from midas import Midas
 from model_definition import ModelDefinition
 from pv_ml_models import cross_validate_grouped, coef_lr_grouped
-from stats_funcs_new import generate_error_stats, heatmap_summary_stats, scatter_results
-
-""" class ModelRun:
-
-    def train(self, start_date, end_date)
-
-    def predict(self, start_date, end_date) """
+from stats_funcs import generate_error_stats, heatmap_summary_stats, scatter_results
 
 class ModelRun2:
     """ 
@@ -104,7 +98,7 @@ class ModelRun2:
                  end_date=datetime.datetime.today(), forecast_hours_ahead=0, power_sum_normalized = True, 
                  observation_freq='1H', log_target=False, solar_geometry=False, feature_list=[], lagged_variables={}, 
                  daylight_hours='', clean_sigma=5, verbose=1,
-                 ml_model='linear_r', split_model=[], no_folds=10, **kwargs):
+                 ml_model='linear_r', split_model=[], **kwargs):
 
         # assign attributes
         self.power_list = power_list        
@@ -150,7 +144,7 @@ class ModelRun2:
 
     def populate_power(self):
         """ Populates the power data object with requested data. """
-        self.power_data.load_data(self.power_list, self.start_date - timedelta(1), self.end_date)
+        self.power_data.load_data(self.power_list, self.start_date, self.end_date)
 
     def get_target(self):
         """ Populates the target Series object by either: 
@@ -183,7 +177,9 @@ class ModelRun2:
         """ Method where we create the features from weather, add additional features - E.g. lagged variables, 
         drop features not requested, and drop any datetimes without appropriate target values, feature values etc. 
 
-        This must be run after get_target().
+        Notes
+        -----
+        Method must be run after get_target().
         """
 
         # copy weather data into features attributes, taking 5 extra days either side for used in lagged features
@@ -223,7 +219,7 @@ class ModelRun2:
         Notes
         -----
         Requires self.features to be in wide format, so the rows are indexed only on datetime.
-        """    
+        """
 
         # restrict to dates requested and drop NaN's
         self.features = self.features.tz_localize(None).loc[self.start_date.strftime('%Y%m%d'): (self.end_date-timedelta(1)).strftime('%Y%m%d')].dropna(how='any')

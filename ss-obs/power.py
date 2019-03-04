@@ -31,7 +31,7 @@ class Power(SiteData):
             Multi-indexed by site_id & datetime with the outturn / load in the single column.
     """
 
-    def __init__(self, power_type='30min_PV', local_config={}):
+    def __init__(self, verbose=3, power_type='30min_PV', local_config={}):
         """ init initalizes an object with no data.
 
         Notes 
@@ -49,7 +49,7 @@ class Power(SiteData):
             denotes section in the config file and inner dicts are inidividual parameters.
             Contents are described in the power_config_writer.py module.
         """
-        super(Power, self).__init__()
+        super(Power, self).__init__(verbose)
         self.config.read('C:/Users/Dan Travers/Documents/GitHub/ss-obs/ss-obs/pvstream.ini')
         # update config file for any local configs passed in:
         for section in self.config:
@@ -85,10 +85,10 @@ class Power(SiteData):
             ['tilt'] = meta['tilt_assessed']
             meta = meta.rename(columns={'ss_id' : 'site_id'}).set_index('site_id')
             meta = meta.drop(['orientation_assessed', 'tilt_assessed'], axis=1)
-            print('Extracted {} rows of midas metadata from db for site_ids: {}'.format(len(meta), str(site_list).strip('[]'))) # verbosity=2
+            self.myprint('Extracted {} rows of midas metadata from db for site_ids: {}'.format(len(meta), str(site_list).strip('[]')), 2) 
             self.metadata = self.metadata.append(meta, sort=False)
         else:
-            print('No metadata extracted for site_ids: {}'.format(str(site_list).strip('[]'))) # verbosity=2
+            self.myprint('No metadata extracted for site_ids: {}'.format(str(site_list).strip('[]')), 2) 
 
     def load_obs_db(self, site_id, start_date, end_date, graph=False):
         """ Method for loading data from the db for a single site_id.
@@ -115,10 +115,11 @@ class Power(SiteData):
             When loading many sites however graphing consumes memory and can be confusing.
         """
 
+        self.myprint("Querying pvstream db for {}.".format(site_id), 3)
         if self.power_type == '30min_PV':
             self.__load_ss30_db(site_id, start_date, end_date)
         else:
-            print('Unsupported power_type in Power object') # verbostiy=1
+            self.myprint('Unsupported power_type in Power object', 1)
         super(Power, self).load_obs_db(site_id, start_date, end_date, graph)
 
     def get_obs(self, freq='1H'):
@@ -177,8 +178,8 @@ class Power(SiteData):
         # stack wide format data:
         if pvs.empty:
             pvflat=pd.DataFrame([])
-            print('{} - no data in db between {} and {}'.\
-            format(site_id, start_date.strftime("'%Y-%m-%d'"), end_date.strftime("'%Y-%m-%d'")))
+            self.myprint('{} - no data in db between {} and {}'.\
+            format(site_id, start_date.strftime("'%Y-%m-%d'"), end_date.strftime("'%Y-%m-%d'")), 1)
         else:
             pvflat = pvs.set_index(['site_id', 'date'],drop=True).stack().reset_index()
             pvflat['hh'] = pvflat.apply(lambda ser: float(ser['level_2'][1:]), axis=1)
@@ -188,8 +189,9 @@ class Power(SiteData):
             pvflat = pvflat.set_index(['site_id', 'datetime'],drop=True)
             pvflat.drop(['date', 'level_2', 'hh', 'mins'], axis=1, inplace=True)
             pvflat = pvflat.tz_localize('UTC', level=1)
+            self.myprint('Loaded {} rows of pv data from pvstream db'.format(pvflat.shape[0]), 3) 
             # report missing hours and append to Power.obs dataframe:
-            check_missing_hours(pvflat.loc[site_id, :], start_date, end_date, 'From db:', site_id, periods_per_day=self.periods_per_day) # verbosity =3
+            check_missing_hours(pvflat.loc[site_id, :], start_date, end_date, 'From db:', site_id, periods_per_day=self.periods_per_day, verbose_setting=self.verbose)
             pvflat = pvflat.apply(np.float64)
             self.obs = self.obs.append(pvflat).sort_index()
             self.obs = self.obs[~self.obs.index.duplicated(keep='last')].sort_index()

@@ -31,7 +31,7 @@ class Midas(SiteData):
         Multi-indexed by src_id & datetime (hourly) and with the variables as columns.
     """
 
-    def __init__(self, local_config={}):
+    def __init__(self, verbose=2, local_config={}):
         """ init initalizes an object with no data.
 
         Notes 
@@ -45,7 +45,7 @@ class Midas(SiteData):
             denotes section in the config file and inner dicts are inidividual parameters.
             Contents are described in the midas_config_writer.py module.
         """
-        super(Midas, self).__init__()
+        super(Midas, self).__init__(verbose)
         self.config = configparser.ConfigParser()
         self.config.read('C:/Users/Dan Travers/Documents/GitHub/ss-obs/ss-obs/midas.ini')
         # update config file for any local configs passed in:
@@ -98,14 +98,14 @@ class Midas(SiteData):
         end_date : date
             End date from which to load in data.  Loads data up to but not including end date
         """
-
+        self.myprint("Querying midas db for {}.".format(src_id), 3)
         irr = self.__load_midas_db_irr(src_id, start_date, end_date)  # load data from irradiance table
         wh = self.__load_midas_db_weather_ex_irr(src_id, start_date, end_date)  # load data from weather table
         temp = pd.merge(irr, wh, how='inner', left_on='ob_end_time', right_on='ob_end_time', suffixes=['','wh'])
         temp.set_index(['ob_end_time'], inplace=True)
         temp = temp.tz_localize('UTC')
         temp.drop(['site_idwh'], axis=1, inplace=True)
-        check_missing_hours(temp, start_date, end_date, 'From db: src_id: ', src_id) # verbosity=3
+        check_missing_hours(temp, start_date, end_date, 'From db: src_id: ', src_id, self.verbose) 
         temp = temp.set_index('site_id', append=True).swaplevel()
         self.obs = self.obs.append(temp, sort=False)
         self.obs = self.obs[~self.obs.index.duplicated(keep='last')]
@@ -142,13 +142,13 @@ class Midas(SiteData):
         irr = pd.DataFrame(self.dbc.query(select_sql), columns=irr_cols)
         if irr.duplicated([irr_cols[1]]).sum() > 0: 
             if irr.duplicated().sum() > 0: 
-                print("{} Duplicate rows removed in query of RO_distinct for src_id = {}".\
-                    format(irr.duplicated().sum(), src_id)) # verbosity=3
+                self.myprint("{} Duplicate rows removed in query of RO_distinct for src_id = {}".\
+                    format(irr.duplicated().sum(), src_id), 2) 
             else:
-                print("***{} Duplicate observation times BUT different data removed in query of RO_distinct for src_id = {}".\
-                    format(irr.duplicated().sum(), src_id)) # verbosity=3
+                self.myprint("***{} Duplicate observation times BUT different data removed in query of RO_distinct for src_id = {}".\
+                    format(irr.duplicated().sum(), src_id), 3) 
             irr = irr[~irr.duplicated([irr_cols[1]])]
-        print('Loaded {} rows of irradiance data from RO_distinct'.format(irr.shape[0])) # verbosity=3
+        self.myprint('Loaded {} rows of irradiance data from RO_distinct'.format(irr.shape[0]), 3) 
         return(irr)
 
     def __load_midas_db_weather_ex_irr(self, src_id, start_date, end_date):
@@ -192,12 +192,12 @@ class Midas(SiteData):
         # check for duplicates
         if wh.duplicated([wh_cols[1]]).sum()>0: 
             if wh.duplicated().sum() > 0: 
-                print("{} Duplicate rows removed in query of WH for src_id = {}".format(wh.duplicated().sum(), src_id)) # verbosity=3
+                self.myprint("{} Duplicate rows removed in query of WH for src_id = {}".format(wh.duplicated().sum(), src_id), 2) 
             else:
-                print("***{} Duplicate observation times BUT different data removed in query of WH for src_id = {}".\
-                    format(wh.duplicated().sum(), src_id)) # verbosity=3
+                self.myprint("***{} Duplicate observation times BUT different data removed in query of WH for src_id = {}".\
+                    format(wh.duplicated().sum(), src_id), 2) 
             wh = wh[~wh.duplicated([wh_cols[1]])]
-        print('{} rows of weather data from WH'.format(wh.shape[0])) # verbosity=3
+        self.myprint('{} rows of weather data from WH'.format(wh.shape[0]), 3)
         return(wh)
     
     def get_obs(self, freq='1H'):
@@ -217,5 +217,5 @@ class Midas(SiteData):
         if freq=='1H':
             return(self.obs)
         else: 
-            print('Invalid frequency to request for weather data.') # verbosity=1
+            self.myprint('Invalid frequency to request for weather data.', 1) 
             return(None)

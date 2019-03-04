@@ -13,7 +13,7 @@ with pd.HDFStore('c:/Users/Dan Travers/Documents/GitHub/ss-obs/tests/power_2site
     power_obs_bench = hdf.select('obs')
 with pd.HDFStore('c:/Users/Dan Travers/Documents/GitHub/ss-obs/tests/power_2sites_2days.h5', 'r') as hdf:
     power_metadata_bench = hdf.select('metadata')  
-power = power.Power()
+power = power.Power(1)
 power.load_data([3111, 6730], s, e,  goto_db='Always')
 
 pd.testing.assert_frame_equal(power.metadata, power_metadata_bench)
