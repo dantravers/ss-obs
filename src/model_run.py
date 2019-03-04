@@ -3,7 +3,7 @@
 # method.  
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import os
 import datetime
 from datetime import timedelta
@@ -261,13 +261,14 @@ class ModelRun:
 
     def __graph_features_and_target(self):
         #graph number of observations per day and number of zeros in dataset
-        daily_outturn_data = self.target.groupby(pd.Grouper(freq='D')).count()
+        """         daily_outturn_data = self.target.groupby(pd.Grouper(freq='D')).count()
         daily_weather_data = self.features.groupby(pd.Grouper(freq='D')).count()
         daily_zero_outturn_data = self.target[self.target.outturn==0].groupby(pd.Grouper(freq='D')).count()
         plt.figure(figsize=(16,1))
         plt.plot(daily_weather_data, color='y')
         plt.plot(daily_outturn_data, color='b')
-        plt.plot(daily_zero_outturn_data, color='r')
+        plt.plot(daily_zero_outturn_data, color='r') """
+        pass
 
     def __remove_zero_outturn(self, fraction=0.005):
         # removes the records from the dataset where the outturn is zero but the irradiance is non-zero

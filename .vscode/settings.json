@@ -2,7 +2,4 @@
     "python.unitTest.pyTestEnabled": true,
     "python.unitTest.unittestEnabled": false,
     "python.unitTest.nosetestsEnabled": false,
-    "python.unitTest.pyTestArgs": [
-        "ss-obs"
-    ]
 }
