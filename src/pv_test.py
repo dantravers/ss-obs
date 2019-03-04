@@ -24,7 +24,7 @@ ml_model_list = [lr, grad]
 weather = md.Midas(3)
 power = pw.Power(3)
 #weather.load_data([842], start, end, goto_db='')
-for model in ml_model_list: 
+""" for model in ml_model_list: 
     run1= mr.ModelRun([4784], 
                    [842], 
                    power, weather,
@@ -32,4 +32,4 @@ for model in ml_model_list:
                    start, end, 
                    forecast_hours_ahead=0, 
                    sigma_clean=5)
-    run1.cross_validate()
+    run1.cross_validate() """

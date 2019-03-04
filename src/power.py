@@ -50,7 +50,7 @@ class Power(SiteData):
             Contents are described in the power_config_writer.py module.
         """
         super(Power, self).__init__(verbose)
-        self.config.read('C:/Users/Dan Travers/Documents/GitHub/ss-obs/ss-obs/pvstream.ini')
+        self.config.read('C:/Users/Dan Travers/Documents/GitHub/ss-obs/src/pvstream.ini')
         # update config file for any local configs passed in:
         for section in self.config:
             if section in local_config:

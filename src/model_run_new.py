@@ -242,7 +242,7 @@ class ModelRun2:
             self.features = self.features[(self.features.index.hour >= low_hour) & (self.features.index.hour < high_hour) ]
         else: 
             print('Daylight hours attribute is not valid.')
-        #self.__remove_zero_outturn()
+        self.__remove_zero_outturn()
         self.target = pd.DataFrame(self.features['outturn'].sort_index())
         self.features = self.features.drop('outturn', axis=1).sort_index()
 

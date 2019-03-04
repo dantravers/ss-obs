@@ -47,6 +47,6 @@ config['query_settings']['metadata_object_cols'] = 'site_id, src_name, lat, long
 config['query_settings']['version_num'] = '1'
 config['query_settings']['met_domain_names'] = "'AWSHRLY', 'AWSWIND', 'ESAWWIND', 'HWNDAUTO', 'WINDMEAN', 'SYNOP', 'NCM', 'HSUN3445', 'DLY3208', 'CAWS', 'METAR'"
 config['query_settings']['default_earliest_date'] = '2018-01-01'
-with open('C:\\Users\\Dan Travers\\Documents\\GitHub\\ss-obs\\ss-obs\\midas.ini', 'w') as configfile:
+with open('C:\\Users\\Dan Travers\\Documents\\GitHub\\ss-obs\\src\\midas.ini', 'w') as configfile:
     config.write(configfile)
 
