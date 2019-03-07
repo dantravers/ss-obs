@@ -19,17 +19,30 @@ lr = ModelDefinition('linear_r', ['month', 'hour'], 10, **kwargs_empty, text='Mt
 rf = ModelDefinition('random_f', [], 10, **kwargs_empty)
 kwargs_grad = {"n_estimators": 100, "learning_rate" : 0.1, "max_depth" : 5, "random_state" : 0, "loss" : "ls"}
 grad = ModelDefinition('g_boost', [], 10, **kwargs_grad)
-ml_model_list = [lr, grad]
+lag = {}
+lag[1] = { 'lags' : {'irr' : [1] }}
+lag[22] = { 'lags' : {'irr' : [-1] }, 'rolling' : { 'irr' : [2]} }
+lag[3] = { 'lags' : {'irr' : [1] }}
+lag[23] = { 'lags' : {'irr' : [-1] }, 'rolling' : { 'irr' : [2]} }
+lag[4] = { 'lags' : {'irr' : [1] }}
+lag[42] = { 'lags' : {'irr' : [-1] }, 'rolling' : { 'irr' : [2]} }
 
 weather = md.Midas(3)
 power = pw.Power(3)
 #weather.load_data([842], start, end, goto_db='')
-""" for model in ml_model_list: 
-    run1= mr.ModelRun([4784], 
-                   [842], 
-                   power, weather,
-                   model, 
-                   start, end, 
-                   forecast_hours_ahead=0, 
-                   sigma_clean=5)
-    run1.cross_validate() """
+for row in lag:
+    for model in[lr, grad]: 
+        run1= mr.ModelRun([4784], 
+                    [842], 
+                    power, weather,
+                    model, 
+                    start, end, 
+                    forecast_hours_ahead=0, 
+                    sigma_clean=5, 
+                    goto_db='Never',
+                    verbose=3)
+        try: 
+            print('rolling = {}'.format(str(lag[row]['rolling']['irr'])))
+        except KeyError:
+            print('no rolling')        
+        run1.cross_validate()

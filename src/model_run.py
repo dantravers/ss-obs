@@ -103,7 +103,7 @@ class ModelRun:
     def __init__(self, power_list, wh_list, power_data, wh_data, model_def, start_date, 
                  end_date=datetime.datetime.today(), forecast_hours_ahead=0, power_sum_normalized = True, 
                  observation_freq='1H', log_target=False, solar_geometry=False, feature_list=[], lagged_variables={}, 
-                 daylight_hours='', clean_sigma=5,
+                 daylight_hours='', clean_sigma=5, goto_db = '', 
                  split_model=[], verbose=2, **kwargs):
 
         # assign attributes
@@ -123,6 +123,7 @@ class ModelRun:
         self.lagged_variables = lagged_variables
         self.daylight_hours = daylight_hours
         self.clean_sigma = clean_sigma
+        self.goto_db = goto_db
         self.verbose = verbose
         self.mods = ''
         # run methods to populate data:
@@ -150,11 +151,11 @@ class ModelRun:
 
     def populate_wh(self):
         """ Populates the weather data object with requested data."""
-        self.wh_data.load_data(self.wh_list, self.start_date - timedelta(1), self.end_date)
+        self.wh_data.load_data(self.wh_list, self.start_date - timedelta(1), self.end_date, goto_db = self.goto_db)
 
     def populate_power(self):
         """ Populates the power data object with requested data. """
-        self.power_data.load_data(self.power_list, self.start_date, self.end_date)
+        self.power_data.load_data(self.power_list, self.start_date, self.end_date, goto_db = self.goto_db)
 
     def get_target(self):
         """ Populates the target Series object by either: 
@@ -193,8 +194,6 @@ class ModelRun:
         """
 
         # copy weather data into features attributes, taking 5 extra days either side for used in lagged features
-        #self.features = self.wh_data.get_obs().loc[self.wh_list,\
-        #    (self.start_date-timedelta(5)).strftime('%Y%m%d'): (self.end_date+timedelta(5)).strftime('%Y%m%d') ].copy()
         # below overly complex line is what I currently have.  Feels like I should be able to do the line above, or 
         # something simpler.
         self.features = self.wh_data.get_obs().loc[self.wh_list, :].reset_index(level=0).tz_localize(None).\
@@ -277,6 +276,9 @@ class ModelRun:
         rows = self.features.shape[0]
         # sum up the irradiance from all weather sites and find on each datetime if the irradiance is greater
         # than the tolerance (default 0.5%) of the maximum irradiance across all datetimes.
+        # Remove these rows.  
+        # Note the behaviour is slightly problematic when using lagged irradiance, as different runs with different
+        # lags remove different datetimes (as lagged irr is added in    ).
         self.features['irr'] = self.features.loc[:,[col for col in self.features.columns if 'irr' in col]].sum(axis=1)
         self.features.drop(self.features[(self.features.outturn==0) & (self.features.irr>self.features.irr.max()*fraction)].index, inplace=True)
         self.features = self.features.drop('irr', axis=1)
@@ -290,12 +292,15 @@ class ModelRun:
         -----
         Dictionary lagged_variables contains first entry: 'lags', which contains a 
         dictionary for the lagged hours for each weather variable string.
+        The sign convention is that a lag of 1 means the weather reading from the hour preceding the
+        hour in question is added as a feature (E.g. to account for irr being high/ low the
+        hour before the heating the cell.)
         The second entry contains 'rolling', which contains an entry for each rolling average number
         of hours to be used.  The lagged_variables parameters is a dictionary like: 
         lagged_data = { 'lags' : {'irr' : [2, 1, -1], 
                                   'air_temp' : [1 ] }, 
                         'rolling' : { 'irr' : [24]} }
-        Note the rolling average includes the current date in the rolling average.
+        Note the rolling average does not include the current datetime in the rolling average.
         """
 
         for feature in self.features.columns.values:
@@ -308,7 +313,7 @@ class ModelRun:
             try: 
                 for i in self.lagged_variables['rolling'][feature]:
                     name = feature + 'r' + str(i)
-                    self.features[name] = self.features.groupby(level=0)[feature].apply(lambda x: x.rolling(window=i).mean())
+                    self.features[name] = self.features.groupby(level=0)[feature].apply(lambda x: x.rolling(window=i).mean().shift(1))
             except KeyError:
                 pass
 
