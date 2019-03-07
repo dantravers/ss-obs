@@ -129,6 +129,7 @@ class ModelRun:
         # run methods to populate data:
         self.populate_wh()
         self.populate_power()
+        self.power_data.resample()
         self.get_target()
         self.create_features()
         
@@ -147,7 +148,7 @@ class ModelRun:
             cap = self.target_capacity * 1000
         else:
             cap = self.target.iloc[:,0].max()
-        self.stats_ = generate_error_stats(self.results_, cap, splits=True)
+        self.stats_ = generate_error_stats(self.results_, cap, splits=False)
 
     def populate_wh(self):
         """ Populates the weather data object with requested data."""

@@ -29,6 +29,14 @@ class Power(SiteData):
         obs : dataframe
             Three dimensional dataframe containing the readings of the sites in the metadata.
             Multi-indexed by site_id & datetime with the outturn / load in the single column.
+        power_type : str
+            Parameter to define which type of power data is to be stored. The default is 30min_PV, 
+            which means 30 min data from pvstream db.  Other options are 5min data from pvstream and 
+            load data (30min).
+        stored_as : str
+            Parameter to describe the frequency the data is currently stored in the self.obs dataframe.
+            This will be set to power_type at initialization, but can be changed by the user to 
+            convert to a coarser frequency if it is known that the coarser frequency is requested often.
     """
 
     def __init__(self, verbose=3, power_type='30min_PV', local_config={}):
@@ -57,7 +65,7 @@ class Power(SiteData):
                 self.config[section].update(local_config[section])
         self.default_earliest_date = datetime.datetime.strptime(self.config['query_settings']['default_earliest_date'], '%Y-%m-%d').date()
         self.dbc = DBConnector(self.config['dbc']['mysql_pvstream_options'], session_tz="UTC")
-        self.power_type = power_type
+        self.power_type = self.stored_as = power_type
         self.periods_per_day = (24 * 60) / int(self.power_type[0:2])
 
     def load_metadata_db(self, site_list):
@@ -93,7 +101,7 @@ class Power(SiteData):
     def load_obs_db(self, site_id, start_date, end_date, graph=False):
         """ Method for loading data from the db for a single site_id.
         The method calls the appropriate loading db method based on the power_type attribute.
-        
+
         Notes
         -----
         Data is appended directly to self.obs dataframe.  
@@ -116,14 +124,45 @@ class Power(SiteData):
         """
 
         self.myprint("Querying pvstream db for {}.".format(site_id), 3)
-        if self.power_type == '30min_PV':
+        if (self.power_type == '30min_PV') & (self.stored_as == '30m'):
             self.__load_ss30_db(site_id, start_date, end_date)
         else:
-            self.myprint('Unsupported power_type in Power object', 1)
+            self.myprint('Unsupported power_type in Power object or data has been resampled in instance.', 1)
         super(Power, self).load_obs_db(site_id, start_date, end_date, graph)
 
+    def save_to_hdf(self):
+        """ Method to save observation data and metadata to hdf.
+        The power subclass needs to check the data is stored in the native frequency before saving.
+        If so, it calls the parent method.
+        """
+        if self.stored_as == self.power_type:
+            super(Power, self).save_to_hdf()
+        else: 
+            self.myprint('Data not stored at native frequency - has been compressed - so cannot save to hdf.', 1)
+
+    def resample(self, freq='1H'):
+        """ Method to resample the obs to a different frequency and store them at that frequency.
+        
+        Notes
+        -----
+        The method should be called when you know you will be accessing only the resampled
+        frequency.  It is NOT possible to save to hdf after calling this method, as the detailed
+        data is lost.
+        The method sets the stored_as attribute on the object instance.
+
+        Parameters
+        ----------
+        freq : str
+            The frequency to resample to.
+        """
+        if freq is not self.stored_as:
+            self.obs = self.get_obs(freq)
+            self.stored_as = freq
+        else:
+            self.myprint('Data already stored at requested resample frequency.', 3)
+
     def get_obs(self, freq='1H'):
-        """ function to return a dataframe of observation data aggregated to requested frequency level 
+        """ Function to return a dataframe of observation data aggregated to requested frequency level 
 
         Notes
         -----
@@ -139,13 +178,18 @@ class Power(SiteData):
         """
         
         if freq == '1H': 
-            pvhourly = pd.DataFrame(self.obs.reset_index(level='site_id').groupby('site_id')['outturn'].resample('1H',closed='right', loffset='1H').sum())
-            # ensure that any NaNs are reflected in the output df, and then dropped (I.e. not hidden in the resampling)
-            pvout = pd.merge(pvhourly, self.obs, how='left', left_index=True, right_index=True, suffixes=['', 'hh'])
-            pvout.apply(fillnans, axis=1)
-            pvout.drop(['outturnhh'], axis=1, inplace=True)
-            pvout = pvout.dropna()
-        if (freq == '30m') & (self.power_type == '30min_PV'): 
+            if self.stored_as == '30min_PV':
+                pvhourly = pd.DataFrame(self.obs.reset_index(level='site_id').groupby('site_id')['outturn'].resample('1H',closed='right', loffset='1H').sum())
+                # ensure that any NaNs are reflected in the output df, and then dropped (I.e. not hidden in the resampling)
+                pvout = pd.merge(pvhourly, self.obs, how='left', left_index=True, right_index=True, suffixes=['', 'hh'])
+                pvout.apply(fillnans, axis=1)
+                pvout.drop(['outturnhh'], axis=1, inplace=True)
+                pvout = pvout.dropna()
+            elif self.stored_as == '1H':
+                pvout=self.obs.dropna()
+            else:
+                self.myprint('Stored as 30m PV data and requested frequency not supported.', 1)
+        if (freq == '30m') & (self.stored_as == '30min_PV'): 
             pvout = self.obs.dropna()
         return(pvout)
 
