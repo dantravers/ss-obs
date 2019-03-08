@@ -3,6 +3,6 @@
     "python.unitTest.unittestEnabled": false,
     "python.unitTest.nosetestsEnabled": false,
     "python.unitTest.pyTestArgs": [
-        "tests"
+        "."
     ],
 }

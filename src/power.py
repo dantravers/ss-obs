@@ -124,7 +124,7 @@ class Power(SiteData):
         """
 
         self.myprint("Querying pvstream db for {}.".format(site_id), 3)
-        if (self.power_type == '30min_PV') & (self.stored_as == '30m'):
+        if (self.power_type == '30min_PV') & (self.stored_as == '30min_PV'):
             self.__load_ss30_db(site_id, start_date, end_date)
         else:
             self.myprint('Unsupported power_type in Power object or data has been resampled in instance.', 1)

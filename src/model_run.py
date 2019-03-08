@@ -301,7 +301,9 @@ class ModelRun:
         lagged_data = { 'lags' : {'irr' : [2, 1, -1], 
                                   'air_temp' : [1 ] }, 
                         'rolling' : { 'irr' : [24]} }
-        Note the rolling average does not include the current datetime in the rolling average.
+        The rolling average does not include the current datetime in the rolling average.
+        The created features are labelled: feat_n for a lagged feature by n, and 
+        featrn for a rolling average feature of n.
         """
 
         for feature in self.features.columns.values:

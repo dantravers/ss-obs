@@ -1,0 +1,7 @@
+[
+  "tests/test_cross_validate.py::test_cross_validate",
+  "tests/test_load_additional_obs_from_db.py::test_load_additional_midas_obs_from_db",
+  "tests/test_load_additional_obs_from_db.py::test_load_additional_pvstream_obs_from_db",
+  "tests/test_load_obs_from_db.py::test_load_midas_obs_from_db",
+  "tests/test_load_obs_from_db.py::test_load_pvstream_obs_from_db"
+]

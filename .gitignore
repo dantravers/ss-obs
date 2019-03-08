@@ -8,3 +8,5 @@ src/pv_test.py
 src/__pycache__/model_run.cpython-37.pyc
 src/__pycache__/pv_test.cpython-37-PYTEST.pyc
 src/__pycache__/model_run.cpython-37.pyc
+src/__pycache__/pv_ml_models.cpython-37.pyc
+src/profile.txt
