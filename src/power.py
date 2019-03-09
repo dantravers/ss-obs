@@ -65,7 +65,8 @@ class Power(SiteData):
                 self.config[section].update(local_config[section])
         self.default_earliest_date = datetime.datetime.strptime(self.config['query_settings']['default_earliest_date'], '%Y-%m-%d').date()
         self.dbc = DBConnector(self.config['dbc']['mysql_pvstream_options'], session_tz="UTC")
-        self.power_type = self.stored_as = power_type
+        self.power_type = power_type
+        self.stored_as = power_type[0:3]
         self.periods_per_day = (24 * 60) / int(self.power_type[0:2])
 
     def load_metadata_db(self, site_list):
@@ -124,7 +125,7 @@ class Power(SiteData):
         """
 
         self.myprint("Querying pvstream db for {}.".format(site_id), 3)
-        if (self.power_type == '30min_PV') & (self.stored_as == '30min_PV'):
+        if (self.power_type == '30min_PV') & (self.stored_as == '30m'):
             self.__load_ss30_db(site_id, start_date, end_date)
         else:
             self.myprint('Unsupported power_type in Power object or data has been resampled in instance.', 1)
@@ -135,7 +136,7 @@ class Power(SiteData):
         The power subclass needs to check the data is stored in the native frequency before saving.
         If so, it calls the parent method.
         """
-        if self.stored_as == self.power_type:
+        if self.stored_as == self.power_type[0:3]:
             super(Power, self).save_to_hdf()
         else: 
             self.myprint('Data not stored at native frequency - has been compressed - so cannot save to hdf.', 1)
@@ -150,12 +151,14 @@ class Power(SiteData):
         data is lost.
         The method sets the stored_as attribute on the object instance.
 
+
         Parameters
         ----------
         freq : str
-            The frequency to resample to.
+            The frequency to resample to, in: {'1H', '30m'}
         """
         if freq is not self.stored_as:
+            self.myprint('Resampling from {} to {}.'.format(self.stored_as, freq), 3)
             self.obs = self.get_obs(freq)
             self.stored_as = freq
         else:
@@ -178,7 +181,7 @@ class Power(SiteData):
         """
         
         if freq == '1H': 
-            if self.stored_as == '30min_PV':
+            if self.stored_as == '30m':
                 pvhourly = pd.DataFrame(self.obs.reset_index(level='site_id').groupby('site_id')['outturn'].resample('1H',closed='right', loffset='1H').sum())
                 # ensure that any NaNs are reflected in the output df, and then dropped (I.e. not hidden in the resampling)
                 pvout = pd.merge(pvhourly, self.obs, how='left', left_index=True, right_index=True, suffixes=['', 'hh'])
@@ -189,7 +192,7 @@ class Power(SiteData):
                 pvout=self.obs.dropna()
             else:
                 self.myprint('Stored as 30m PV data and requested frequency not supported.', 1)
-        if (freq == '30m') & (self.stored_as == '30min_PV'): 
+        if (freq == '30m') & (self.stored_as == '30m'): 
             pvout = self.obs.dropna()
         return(pvout)
 
@@ -239,6 +242,30 @@ class Power(SiteData):
             pvflat = pvflat.apply(np.float64)
             self.obs = self.obs.append(pvflat).sort_index()
             self.obs = self.obs[~self.obs.index.duplicated(keep='last')].sort_index()
+
+class Load(Power):
+    """ load modelling
+    We want to store the predicted values in here for longer timeseries based on weather & model.
+    So maybe we add another dimension to the dataframe.  Maybe add this to the column as "actual and modelled".
+    May want to override the SiteData methods for finding obs data, as we probably always want to load the entire timeseries.
+    Or maybe better to save the forecasted values to another child class of Power (ModelledLoad).  
+    ModelledLoad would be more similar to Power, and Modelled Load will have different date ranges.
+    Or we inherit Load and it has an obs df AND a measured df.  Measured is loaded from excel, and obs modelled.
+    We would need to override load_data from SiteData, but we could still call the parent method. 
+    The load from hdf is still useful.  But maybe it will be 
+    """
+    def __init__():
+        # to be filled in later
+        # possibly have config store_path as a parameter passed in, as will vary often. 
+        pass
+    
+    def load_metadata_db(self, site_list):
+        pass
+    
+    def load_obs_db(self, site_id, start_date, end_date, graph=False):
+        """ 
+        Function should query the excel and should also populate metadata for NPAM from excel.
+        """
 
 def fillnans(x):
     if np.isnan(x[1]):

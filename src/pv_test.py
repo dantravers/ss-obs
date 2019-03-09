@@ -12,7 +12,7 @@ import model_run as mr
 
 #pw.load_data([5902], start_date=datetime.date(2016, 1, 1), end_date=datetime.date(2018,1,1))
 #pw.save_to_hdf()
-start = datetime.date(2016,1,1)
+""" start = datetime.date(2016,1,1)
 end = datetime.date(2018, 1, 1)
 kwargs_empty = {}
 lr = ModelDefinition('linear_r', ['month', 'hour'], 10, **kwargs_empty, text='Mth-Hr split')
@@ -27,10 +27,10 @@ lag[23] = { 'lags' : {'irr' : [-1] }, 'rolling' : { 'irr' : [2]} }
 lag[4] = { 'lags' : {'irr' : [1] }}
 lag[42] = { 'lags' : {'irr' : [-1] }, 'rolling' : { 'irr' : [2]} }
 
-weather = md.Midas(3)
+weather = md.Midas(3) """
 power = pw.Power(3)
 #weather.load_data([842], start, end, goto_db='')
-for row in lag:
+""" for row in lag:
     for model in[lr, grad]: 
         run1= mr.ModelRun([4784], 
                     [842], 
@@ -45,4 +45,4 @@ for row in lag:
             print('rolling = {}'.format(str(lag[row]['rolling']['irr'])))
         except KeyError:
             print('no rolling')        
-        run1.cross_validate()
+        run1.cross_validate() """

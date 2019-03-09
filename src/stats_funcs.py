@@ -87,7 +87,7 @@ def scatter_results(results):
 
 def bar_compare(data1, data2, hue_selection, title1, title2):
     #Bar chart comparing two sets of statistics from multiple runs, passed in long form
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(16,5), sharey=True)
+    _, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(16,5), sharey=True)
     sns.barplot(x='statistic', y='value', hue=hue_selection, data=data1, ax=ax1)
     sns.barplot(x='statistic', y='value', hue=hue_selection, data=data2, ax=ax2)
     ax1.set_title(title1)
