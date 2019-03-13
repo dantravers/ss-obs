@@ -1,12 +1,5 @@
-src/__pycache__/model_run.cpython-37.pyc
-src/__pycache__/__init__.cpython-37.pyc
-src/__pycache__/midas.cpython-37.pyc
-src/__pycache__/model_run_new.cpython-37.pyc
-src/__pycache__/pv_test.cpython-37-PYTEST.pyc
+src/__pycache__/*.pyc
 tests/scratch.h5
 src/pv_test.py
-src/__pycache__/model_run.cpython-37.pyc
-src/__pycache__/pv_test.cpython-37-PYTEST.pyc
-src/__pycache__/model_run.cpython-37.pyc
-src/__pycache__/pv_ml_models.cpython-37.pyc
 src/profile.txt
+tests/__pycache__/*.pyc
