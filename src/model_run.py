@@ -203,10 +203,8 @@ class ModelRun:
         # add lagged features and then drop features not requested
         if self.feature_list is not '': 
             features_to_drop = [ x for x in self.features.columns.values if x not in self.feature_list]
-        else:
-            features_to_drop = []
         self.__add_lagged_data()
-        self.features = self.features.drop(features_to_drop, axis=1)
+        self.features.drop(features_to_drop, axis=1)
         # create wide format indexed by datetime only, so it can be indexed commonly to the target
         self.features = self.features.swaplevel().unstack() 
         # concetenate the multiindex column into single column index:
@@ -218,7 +216,7 @@ class ModelRun:
             self.features = self.features.assign(hour=self.features.index.hour)
             self.features = self.features.assign(month=self.features.index.month)
         # comments and graph: 
-        self.myprint("{} features with {} datapoints: {}".format(self.features.shape[1], self.features.shape[0], self.features.columns.values), 3)
+        self.myprint("{} features: {}".format(self.features.shape[0], self.features.columns.values), 3)
         self.mods += "¦ {} rows & {} features ".format(self.features.shape[0], self.features.shape[1])
         if self.verbose >= 3:
             self.__graph_features_and_target()

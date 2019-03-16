@@ -7,8 +7,6 @@
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression 
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, cross_val_score, KFold, LeaveOneOut
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
@@ -138,9 +136,6 @@ def model_predict(x_train, y_train, x_test, model_def, graph=False):
 
     if model_def.ml_model == 'linear_r': 
         model = LinearRegression()
-        temp = model.fit(x_train, y_train).predict(x_test)
-    elif model_def.ml_model == 'linear_poly':
-        model = Pipeline([('poly', PolynomialFeatures(**model_def.kwargs)), ('linear', LinearRegression(fit_intercept=False))])
         temp = model.fit(x_train, y_train).predict(x_test)
     elif model_def.ml_model == 'random_f': 
         model = RandomForestRegressor(**model_def.kwargs)

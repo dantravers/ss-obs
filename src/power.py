@@ -13,7 +13,7 @@ import configparser
 from datetime import timedelta
 from dbconnector import DBConnector
 import sys
-from sitedata import SiteData, check_missing_hours, convert_load_col_names
+from sitedata import SiteData, check_missing_hours
 
 class Power(SiteData):
     """ Stores power readings from ss_id database.
@@ -228,23 +228,20 @@ class Power(SiteData):
             self.myprint('{} - no data in db between {} and {}'.\
             format(site_id, start_date.strftime("'%Y-%m-%d'"), end_date.strftime("'%Y-%m-%d'")), 1)
         else:
-            self.__load_wide_data_to_obs(pvs, site_id, start_date, end_date)
-    
-    def __load_wide_data_to_obs(self, wide_data, site_id, start_date, end_date):
-        pvflat = wide_data.set_index(['site_id', 'date'],drop=True).stack().reset_index()
-        pvflat['hh'] = pvflat.apply(lambda ser: float(ser['level_2'][1:]), axis=1)
-        pvflat['mins'] = pvflat.hh * 30
-        pvflat['datetime'] = pvflat.apply(lambda x: x['date'] + datetime.timedelta(minutes = x['mins']), axis=1)
-        pvflat.rename(index = {}, columns = {0: 'outturn'}, inplace=True)
-        pvflat = pvflat.set_index(['site_id', 'datetime'],drop=True)
-        pvflat.drop(['date', 'level_2', 'hh', 'mins'], axis=1, inplace=True)
-        pvflat = pvflat.tz_localize('UTC', level=1)
-        self.myprint('Loaded {} rows of pv data from pvstream db'.format(pvflat.shape[0]), 3) 
-        # report missing hours and append to Power.obs dataframe:
-        check_missing_hours(pvflat.loc[site_id, :], start_date, end_date, 'From db:', site_id, periods_per_day=self.periods_per_day, verbose_setting=self.verbose)
-        pvflat = pvflat.apply(np.float64)
-        self.obs = self.obs.append(pvflat).sort_index()
-        self.obs = self.obs[~self.obs.index.duplicated(keep='last')].sort_index()
+            pvflat = pvs.set_index(['site_id', 'date'],drop=True).stack().reset_index()
+            pvflat['hh'] = pvflat.apply(lambda ser: float(ser['level_2'][1:]), axis=1)
+            pvflat['mins'] = pvflat.hh * 30
+            pvflat['datetime'] = pvflat.apply(lambda x: x['date'] + datetime.timedelta(minutes = x['mins']), axis=1)
+            pvflat.rename(index = {}, columns = {0: 'outturn'}, inplace=True)
+            pvflat = pvflat.set_index(['site_id', 'datetime'],drop=True)
+            pvflat.drop(['date', 'level_2', 'hh', 'mins'], axis=1, inplace=True)
+            pvflat = pvflat.tz_localize('UTC', level=1)
+            self.myprint('Loaded {} rows of pv data from pvstream db'.format(pvflat.shape[0]), 3) 
+            # report missing hours and append to Power.obs dataframe:
+            check_missing_hours(pvflat.loc[site_id, :], start_date, end_date, 'From db:', site_id, periods_per_day=self.periods_per_day, verbose_setting=self.verbose)
+            pvflat = pvflat.apply(np.float64)
+            self.obs = self.obs.append(pvflat).sort_index()
+            self.obs = self.obs[~self.obs.index.duplicated(keep='last')].sort_index()
 
 class Load(Power):
     """ load modelling
@@ -257,51 +254,20 @@ class Load(Power):
     We would need to override load_data from SiteData, but we could still call the parent method. 
     The load from hdf is still useful.  But maybe it will be 
     """
-
-    def __init__(self, verbose=2, power_type='30min_load', local_config={}):
-        """ init initalizes an object with no data.
-
-        Notes 
-        -----
-        Other columns to query can be selected using the local_config parameter.
-
-        Parameters
-        ----------
-        config : dict
-            A dictionary to override config parameters. Should be a dict of dicts where outer dict
-            denotes section in the config file and inner dicts are inidividual parameters.
-            Contents are described in the midas_config_writer.py module.
-        """
-        super(Load, self).__init__(verbose)
-        self.power_type = power_type
-        self.config = configparser.ConfigParser()
-        self.config.read('C:/Users/Dan Travers/Documents/GitHub/ss-obs/src/load.ini')
-        # update config file for any local configs passed in:
-        for section in self.config:
-            if section in local_config:
-                self.config[section].update(local_config[section])
-        self.default_earliest_date = datetime.datetime.strptime(self.config['query_settings']['default_earliest_date'], '%Y-%m-%d').date()
-
-    def load_from_excel(self, filename='', filepath=''):
+    def __init__():
+        # to be filled in later
+        # possibly have config store_path as a parameter passed in, as will vary often. 
+        pass
+    
+    def load_metadata_db(self, site_list):
+        pass
+    
+    def load_obs_db(self, site_id, start_date, end_date, graph=False):
         """ 
+        Function should query the excel and should also populate metadata for NPAM from excel.
         """
-        if filepath == '':
-            filepath = self.config['query_settings']['file_path']
-        if filename == '': 
-            for load_file in os.listdir(filepath):
-                self.__load_file(load_file)
-        else:
-            self.__load_file(os.path.join(filepath, filename))
-
-    def __load_file(self, load_file):
-        """ load individual file and append to self.obs
-        """
-        raw = pd.read_excel(load_file)
-        raw = raw.rename(convert_load_col_names, axis=1) 
-        self.__load_wide_data_to_obs(raw)
 
 def fillnans(x):
     if np.isnan(x[1]):
         x[0] = np.NaN 
     return x
-

@@ -334,14 +334,3 @@ def check_missing_hours(df, start_date, end_date, type='-', id='Missing ID', per
         print('     {} {}: Missing {} observations from requested period'.\
               format(type, id, periods_per_day*(end_date-start_date).days - len(df)))
     return
-
-def convert_load_col_names(col):
-    col_convert = { ' meter_mpan' : 'site_id', ' read_date' : 'date', 'MPAN' : 'site_id', 'Date' : 'date'}
-    if type(col)==datetime.time: 
-        return('t' + str(int(col.hour*2 + col.minute/30 + 1)))
-    if col.strip()[0:3]=='hh0':
-        return('t' + col.strip()[3:4])
-    if col.strip()[0:2]=='hh':
-        return('t' + col.strip()[2:4])
-    else:
-        return(col_convert[col])
