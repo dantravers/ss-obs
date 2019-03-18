@@ -3,3 +3,7 @@ tests/scratch.h5
 src/pv_test.py
 src/profile.txt
 tests/__pycache__/*.pyc
+.pytest_cache/v/cache/lastfailed
+.pytest_cache/v/cache/nodeids
+.pytest_cache/v/cache/stepwise
+.pytest_cache/v/cache/lastfailed
