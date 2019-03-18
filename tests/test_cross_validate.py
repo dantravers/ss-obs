@@ -43,7 +43,7 @@ def test_cross_validate():
                       sigma_clean=5, 
                         verbose=2)
         run1.cross_validate(False)
-        # test the results are equal for 3 ML models
+        # test the results are equal for 2 ML models
         file_name = os.path.join(data_dir, "bench_results_" + model.ml_model + ".csv" )
         bench_results = pd.read_csv(file_name, index_col=0, parse_dates=True)
         print("Testing model results: {}".format(model.ml_model))
@@ -61,7 +61,7 @@ def test_cross_validate():
 
 def test_add_lagged_features():
     lag1 = { 'lags' : {'irr' : [1, -1]}}
-    # running cross validation through 3 models.
+    # initialize ModelRun, which creates features
     run1= mr.ModelRun([4784], 
                   [676], 
                   power, weather,
@@ -80,7 +80,9 @@ def test_add_lagged_features():
 def test_add_rolling_features():
     rolling = { 'lags' : {'irr' : [-1, -2] }, 
                 'rolling' : { 'irr' : [3]} }
-    # running cross validation through 3 models.
+    file_name = os.path.join(data_dir, "bench_rolling_features.csv" )
+    bench_results = pd.read_csv(file_name, index_col=0, parse_dates=True)
+    # initialize ModelRun, which creates features
     run1= mr.ModelRun([4784], 
                   [676], 
                   power, weather,
@@ -91,7 +93,43 @@ def test_add_rolling_features():
                   sigma_clean=5, 
                     verbose=2)
     # test the results are equal by looking at feature df:
-    file_name = os.path.join(data_dir, "bench_rolling_features.csv" )
+    print("Testing rolling results:")
+    pd.testing.assert_frame_equal(run1.features, bench_results)
+
+def test_remove_features():
+    lag = { 'lags' : {'irr' : [1, -1]}}
+    feat = ['irr', 'air_temp', 'rltv_hum']
+    file_name = os.path.join(data_dir, "bench_remove_features.csv" )
     bench_results = pd.read_csv(file_name, index_col=0, parse_dates=True)
+    # initialize ModelRun, which creates features
+    run1= mr.ModelRun([4784], 
+                  [676], 
+                  power, weather,
+                  lr, 
+                  start, end, 
+                  forecast_hours_ahead=0, 
+                  lagged_variables=lag,
+                  feature_list = feat,  
+                  sigma_clean=5, 
+                    verbose=2)
+    # test the results are equal by looking at feature df:
+    print("Testing rolling results:")
+    pd.testing.assert_frame_equal(run1.features, bench_results)
+
+def test_remove_features_parameter_empty_list():
+    feat = []
+    file_name = os.path.join(data_dir, "bench_no_features_removed.csv" )
+    bench_results = pd.read_csv(file_name, index_col=0, parse_dates=True)
+    # initialize ModelRun, which creates features
+    run1= mr.ModelRun([4784], 
+                  [676], 
+                  power, weather,
+                  lr, 
+                  start, end, 
+                  forecast_hours_ahead=0, 
+                  feature_list = feat,  
+                  sigma_clean=5, 
+                  verbose=2)
+    # test the results are equal by looking at feature df:
     print("Testing rolling results:")
     pd.testing.assert_frame_equal(run1.features, bench_results)
