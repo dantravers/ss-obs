@@ -228,9 +228,9 @@ class Power(SiteData):
             self.myprint('{} - no data in db between {} and {}'.\
             format(site_id, start_date.strftime("'%Y-%m-%d'"), end_date.strftime("'%Y-%m-%d'")), 1)
         else:
-            self.__load_wide_data_to_obs(pvs, site_id, start_date, end_date)
+            self._load_wide_data_to_obs(pvs, site_id, start_date, end_date)
     
-    def __load_wide_data_to_obs(self, wide_data, site_id, start_date, end_date):
+    def _load_wide_data_to_obs(self, wide_data, site_id, start_date, end_date):
         pvflat = wide_data.set_index(['site_id', 'date'],drop=True).stack().reset_index()
         pvflat['hh'] = pvflat.apply(lambda ser: float(ser['level_2'][1:]), axis=1)
         pvflat['mins'] = pvflat.hh * 30
@@ -240,7 +240,7 @@ class Power(SiteData):
         pvflat.drop(['date', 'level_2', 'hh', 'mins'], axis=1, inplace=True)
         pvflat = pvflat.tz_localize('UTC', level=1)
         self.myprint('Loaded {} rows of pv data from pvstream db'.format(pvflat.shape[0]), 3) 
-        # report missing hours and append to Power.obs dataframe:
+        # report missing hours and append to Power/ Load.obs dataframe:
         check_missing_hours(pvflat.loc[site_id, :], start_date, end_date, 'From db:', site_id, periods_per_day=self.periods_per_day, verbose_setting=self.verbose)
         pvflat = pvflat.apply(np.float64)
         self.obs = self.obs.append(pvflat).sort_index()
@@ -298,10 +298,13 @@ class Load(Power):
         """
         raw = pd.read_excel(load_file)
         raw = raw.rename(convert_load_col_names, axis=1) 
-        self.__load_wide_data_to_obs(raw)
+        if raw.site_id.unique().shape[0] > 1: 
+            self.myprint('Load file {} includes more than one identifier - not supported.'.format(load_file), 1)
+        else:
+            self._load_wide_data_to_obs(raw, raw.site_id.iloc[0], \
+                raw.date.min().date(), raw.date.max().date())
 
 def fillnans(x):
     if np.isnan(x[1]):
         x[0] = np.NaN 
     return x
-

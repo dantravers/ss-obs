@@ -133,3 +133,20 @@ def test_remove_features_parameter_empty_list():
     # test the results are equal by looking at feature df:
     print("Testing rolling results:")
     pd.testing.assert_frame_equal(run1.features, bench_results)
+
+def test_extra_terrestrial_irradiance():
+    file_name = os.path.join(data_dir, "bench_solar_feat_extra_terrestrial_irr.csv" )
+    bench_results = pd.read_csv(file_name, index_col=0, parse_dates=True)
+    # initialize ModelRun, which creates features
+    run1= mr.ModelRun([4784], 
+                  [676], 
+                  power, weather,
+                  lr, 
+                  start, end, 
+                  forecast_hours_ahead=0, 
+                  solar_geometry=['month', 'extra'],
+                  sigma_clean=5, 
+                  verbose=2)
+    # test the results are equal by looking at feature df:
+    print("Testing extra-terrestrial irradiation feature:")
+    pd.testing.assert_frame_equal(run1.features, bench_results) 

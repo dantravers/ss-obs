@@ -79,7 +79,6 @@ def cross_validate(X, y, model_def):
                                 'forecast': predict,
                                 'outturn': y.iloc[test_i]})
             raw_predict = raw_predict.append(temp)
-
         ## removed R^2 scores, as for the loo validation, they are all zero, so not informative
         ## essentially they tend to 0 as the number of folds increases to no_samples
         return(raw_predict)
@@ -108,7 +107,11 @@ def cross_validate_grouped(X, y, model_def):
     ML model to be employed, parameters of the model and parameters of the cross-validation.
     """
 
-    if model_def.grouped_by: 
+    if model_def.grouped_by:
+        if 'hour' in model_def.grouped_by:
+            X = X.assign(hour=X.index.hour)
+        if 'month' in model_def.grouped_by:
+            X = X.assign(month=X.index.month)
         grouped = X.groupby(model_def.grouped_by)
         group_predict = pd.DataFrame([])
         for table, groupg in grouped:

@@ -9,6 +9,8 @@ import datetime
 from datetime import timedelta
 from power import Power
 from midas import Midas
+from pvlib.solarposition import get_solarposition
+from pvlib.irradiance import get_extra_radiation
 from model_definition import ModelDefinition
 from pv_ml_models import cross_validate_grouped, coef_lr_grouped
 from stats_funcs import generate_error_stats, heatmap_summary_stats, scatter_results
@@ -101,7 +103,7 @@ class ModelRun:
 
     def __init__(self, power_list, wh_list, power_data, wh_data, model_def, start_date, 
                  end_date=datetime.datetime.today(), forecast_hours_ahead=0, power_sum_normalized = True, 
-                 observation_freq='1H', log_target=False, solar_geometry=False, feature_list=[], lagged_variables={}, 
+                 observation_freq='1H', log_target=False, solar_geometry=[], feature_list=[], lagged_variables={}, 
                  daylight_hours='', clean_sigma=5, goto_db = '', 
                  split_model=[], verbose=2, **kwargs):
 
@@ -171,6 +173,8 @@ class ModelRun:
         if len(self.power_list) == 1:  # for a single power site, the target is just that series.
             self.target = df.xs(self.power_list, level='site_id', axis=0)
             self.target_capacity = self.power_data.metadata.loc[self.power_list[0], 'kWp']
+            self.lat = self.power_data.metadata.latitude.iloc[0]
+            self.lon = self.power_data.metadata.longitude.iloc[0]
         else:
             # straight sum of multiple power sites, excluding NaN's:
             if self.power_sum_normalized == False: 
@@ -183,6 +187,8 @@ class ModelRun:
                 df['outturn'] = df.apply(lambda x: x.outturn * 1 / (capacity.loc[x.site_id]), axis=1)
                 self.target = pd.DataFrame(df.groupby('datetime').mean()['outturn'])
                 self.target_capacity = 1
+            self.lat = self.power_data.metadata.loc[self.power_list, 'latitude'].mean()
+            self.lon = self.power_data.metadata.loc[self.power_list, 'longitude'].mean()
 
     def create_features(self):
         """ Method where we create the features from weather, add additional features - E.g. lagged variables, 
@@ -200,27 +206,49 @@ class ModelRun:
             loc[(self.start_date-timedelta(5)).strftime('%Y%m%d'): (self.end_date+timedelta(5)).strftime('%Y%m%d')]\
                 .set_index('site_id', append=True).swaplevel()
         # add lagged features and then drop features not requested
+        self.__add_lagged_data()
         if len(self.feature_list) > 0: 
             features_to_drop = [ x for x in self.features.columns.values if x not in self.feature_list]
         else:
             features_to_drop = []
-        self.__add_lagged_data()
         self.features = self.features.drop(features_to_drop, axis=1)
         # create wide format indexed by datetime only, so it can be indexed commonly to the target
         self.features = self.features.swaplevel().unstack() 
         # concetenate the multiindex column into single column index:
         self.features.columns = self.features.columns.map('{0[0]}_{0[1]}'.format)
+        # add solar features and/or month & hour features as requested
+        self.__add_solar_features()
         # restrict datetimes and all operations on axis 1:
         self.__limit_datetimes()
-        # add solar features and/or month & hour features as requested
-        if self.solar_geometry is not 'solar':
-            self.features = self.features.assign(hour=self.features.index.hour)
-            self.features = self.features.assign(month=self.features.index.month)
         # comments and graph: 
         self.myprint("{} features with {} datapoints: {}".format(self.features.shape[1], self.features.shape[0], self.features.columns.values), 3)
         self.mods += "¦ {} rows & {} features ".format(self.features.shape[0], self.features.shape[1])
         if self.verbose >= 3:
             self.__graph_features_and_target()
+
+    def __add_solar_features(self):
+        """ Method to add solar geometry related features.
+        
+        Notes
+        -----
+        Guided by the self.solar_geometry list parameter.  
+        If contains "extra" then use extra-terrestrial irradiance as feature.
+        If contains "month" then use month.
+        If contains "hour" then use hour.
+        If solar_geometry is empty then use month and hour.
+        """
+
+        if len(self.solar_geometry) == 0:
+            self.features = self.features.assign(hour=self.features.index.hour)
+            self.features = self.features.assign(month=self.features.index.month)
+        if 'month' in self.solar_geometry:
+            self.features = self.features.assign(month=self.features.index.month)
+        if 'hour' in self.solar_geometry:
+            self.features = self.features.assign(hour=self.features.index.hour)
+        if 'extra' in self.solar_geometry:
+            self.features['e_irr'] = get_extra_radiation(self.features.index) * \
+                np.sin(np.radians(get_solarposition(self.features.index, self.lat, self.lon).apparent_elevation))\
+                    .rolling(window=2).mean()
 
     def __limit_datetimes(self):
         """ Method which removes the datetimes not requested or with missing data, and
@@ -251,8 +279,7 @@ class ModelRun:
         if self.daylight_hours=='':
             low_hour = 9
             high_hour = 17
-            # add solar features and/or month & hour features as requested
-            self.features = self.features[(self.features.index.hour >= low_hour) & (self.features.index.hour < high_hour) ]
+            self.features = self.features[self.features.index.hour.isin(range(low_hour, high_hour)) ]
         else: 
             self.myprint('Daylight hours attribute is not valid.', 1)
         self.__remove_zero_outturn(.005)
