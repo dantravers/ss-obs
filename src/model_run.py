@@ -205,12 +205,12 @@ class ModelRun:
         self.features = self.wh_data.get_obs().loc[self.wh_list, :].reset_index(level=0).tz_localize(None).\
             loc[(self.start_date-timedelta(5)).strftime('%Y%m%d'): (self.end_date+timedelta(5)).strftime('%Y%m%d')]\
                 .set_index('site_id', append=True).swaplevel()
-        # add lagged features and then drop features not requested
-        self.__add_lagged_data()
+        # find columns to drop first, then add lagged features, then drop columns:
         if len(self.feature_list) > 0: 
             features_to_drop = [ x for x in self.features.columns.values if x not in self.feature_list]
         else:
             features_to_drop = []
+        self.__add_lagged_data()
         self.features = self.features.drop(features_to_drop, axis=1)
         # create wide format indexed by datetime only, so it can be indexed commonly to the target
         self.features = self.features.swaplevel().unstack() 

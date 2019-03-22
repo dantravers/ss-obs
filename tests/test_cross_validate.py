@@ -113,7 +113,7 @@ def test_remove_features():
                   sigma_clean=5, 
                     verbose=2)
     # test the results are equal by looking at feature df:
-    print("Testing rolling results:")
+    print("Testing remove features:")
     pd.testing.assert_frame_equal(run1.features, bench_results)
 
 def test_remove_features_parameter_empty_list():
