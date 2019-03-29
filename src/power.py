@@ -239,7 +239,8 @@ class Power(SiteData):
         pvflat = pvflat.set_index(['site_id', 'datetime'],drop=True)
         pvflat.drop(['date', 'level_2', 'hh', 'mins'], axis=1, inplace=True)
         pvflat = pvflat.tz_localize('UTC', level=1)
-        self.myprint('Loaded {} rows of pv data from pvstream db'.format(pvflat.shape[0]), 3) 
+        data_source = "load file" if type(self)==Load else "pvstream"
+        self.myprint('Loaded {} rows of data from {} db'.format(pvflat.shape[0], data_source), 3) 
         # report missing hours and append to Power/ Load.obs dataframe:
         check_missing_hours(pvflat.loc[site_id, :], start_date, end_date, 'From db:', site_id, periods_per_day=self.periods_per_day, verbose_setting=self.verbose)
         pvflat = pvflat.apply(np.float64)
@@ -284,25 +285,57 @@ class Load(Power):
 
     def load_from_excel(self, filename='', filepath=''):
         """ 
+        Loads data from excel sheets.
+
+        Notes
+        -----
+        Only a limited range of file formats are catered for in the load.  New column names and formats
+        should be relatively easy to add support for in the private method __load_file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of the file to be loaded.
+            If no file is specified, the method will attempt to load all files in the directory in filepath.
+        filepath : str
+            Path where the file is located.  Default file path is specified in config settings: 
+            query_settings>file_path.
         """
         if filepath == '':
             filepath = self.config['query_settings']['file_path']
         if filename == '': 
-            for load_file in os.listdir(filepath):
-                self.__load_file(load_file)
+            for l_file in os.listdir(filepath):
+                self.myprint("Loading load file: {}.".format(l_file), 2)
+                self.__load_file(os.path.join(filepath, l_file))
         else:
+            self.myprint("Loading load file: {}.".format(filename), 2)
             self.__load_file(os.path.join(filepath, filename))
 
-    def __load_file(self, load_file):
+    def __load_file(self, l_file):
         """ load individual file and append to self.obs
         """
-        raw = pd.read_excel(load_file)
-        raw = raw.rename(convert_load_col_names, axis=1) 
-        if raw.site_id.unique().shape[0] > 1: 
-            self.myprint('Load file {} includes more than one identifier - not supported.'.format(load_file), 1)
-        else:
-            self._load_wide_data_to_obs(raw, raw.site_id.iloc[0], \
-                raw.date.min().date(), raw.date.max().date())
+        #create empty metadata df with correct data types
+        dtypes = [ str, str, np.float64, np.float64, np.float64]
+        col = [x.strip() for x in self.config['query_settings']['site_id_metadata_object_cols'].split(',')]
+        assert len(col) == len(dtypes)
+        temp = pd.DataFrame(index=None)
+        for c, d in zip(col, dtypes):
+            temp[c] = pd.Series(dtype=d)
+        #read in raw data from file and then load to memory
+        try: 
+            raw = pd.read_excel(l_file, sheet_name=0, usecols=49)
+            raw = raw.rename(convert_load_col_names, axis=1)
+            if raw[raw.isnull().any(axis=1)].shape[0]>0:
+                self.myprint('Load file {} includes null values in rows.  Likely cause is stray cells below the data table - please check'.format(l_file), 1)
+            elif raw.site_id.unique().shape[0] > 1: 
+                self.myprint('Load file {} includes more than one meter / identifier - not supported.'.format(l_file), 1)
+            else:
+                temp.loc[raw.site_id[0], ['name', 'kWp']] = [os.path.basename(l_file).split('.')[0], raw.set_index(['site_id', 'date']).max().max()]
+                self._load_wide_data_to_obs(raw, raw.site_id.iloc[0], \
+                    raw.date.min().date(), raw.date.max().date()+timedelta(1))
+            self.metadata = self.metadata.append(temp)
+        except KeyError:
+            self.myprint('KeyError with loading excel: {} - check file.'.format(l_file), 1)
 
 def fillnans(x):
     if np.isnan(x[1]):

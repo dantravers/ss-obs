@@ -22,6 +22,7 @@ config['hdf5']['meta_hdf_key'] = 'metadata'
 config['hdf5']['obs_hdf_key'] = 'obs'
 config['query_settings'] = {}
 config['query_settings']['default_earliest_date'] = '2018-01-01'
-config['query_settings']['file_path'] = "C:\\Users\\Dan Travers\\Google Drive\\Projects\\Load & PV\\data_files"
+config['query_settings']['site_id_metadata_object_cols'] = 'name, customer, latitude, longitude, kWp' 
+config['query_settings']['file_path'] = "C:\\Users\\Dan Travers\\Google Drive\\Bryt\\Modelling\\data"
 with open('C:\\Users\\Dan Travers\\Documents\\GitHub\\ss-obs\\src\\load.ini', 'w') as configfile:
     config.write(configfile)

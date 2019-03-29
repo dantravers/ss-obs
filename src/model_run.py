@@ -63,10 +63,11 @@ class ModelRun:
     lagged_variables : Dictionary
         Dictionary of features and list of lags for each feature. 
         These lags (can be forwards or backwards) are added to the feature set.
-    daylight_hours : str
-        String describes methods for restricting the model analysis to certain (daylight) hours.
+    daylight_hours : obj:'list' of int
+        If a list of length 2, these are the integer numbers for the first and last hours included in analysis.  
+        To include all hours, enter a list of length 2 with entries [0, 25]
         If blank, hours are restricted to 0800 to 1600 UTC.  
-        If a number, this is the number of degrees of solar angle above horizon to start counting from.
+        If a list of length 1, this is the number of degrees of solar angle above horizon to start counting from.
     clean_sigma : int
         Number of standard deviations of the outturn away from the mean for that month-hour to remove.
         Always remove zero outturn values.
@@ -173,8 +174,8 @@ class ModelRun:
         if len(self.power_list) == 1:  # for a single power site, the target is just that series.
             self.target = df.xs(self.power_list, level='site_id', axis=0)
             self.target_capacity = self.power_data.metadata.loc[self.power_list[0], 'kWp']
-            self.lat = self.power_data.metadata.latitude.iloc[0]
-            self.lon = self.power_data.metadata.longitude.iloc[0]
+            self.lat = self.power_data.metadata.loc[self.power_list[0], 'latitude']
+            self.lon = self.power_data.metadata.loc[self.power_list[0], 'longitude']
         else:
             # straight sum of multiple power sites, excluding NaN's:
             if self.power_sum_normalized == False: 
@@ -249,6 +250,11 @@ class ModelRun:
             self.features['e_irr'] = get_extra_radiation(self.features.index) * \
                 np.sin(np.radians(get_solarposition(self.features.index, self.lat, self.lon).apparent_elevation))\
                     .rolling(window=2).mean()
+        if 'clearsky' in self.solar_geometry:
+            irr_cols = [col for col in self.features.columns if 'irr' in col]
+            self.features['clear_s'] = self.features[irr_cols[0]] / get_extra_radiation(self.features.index) * \
+                np.sin(np.radians(get_solarposition(self.features.index, self.lat, self.lon).apparent_elevation))\
+                    .rolling(window=2).mean()
 
     def __limit_datetimes(self):
         """ Method which removes the datetimes not requested or with missing data, and
@@ -279,6 +285,9 @@ class ModelRun:
         if self.daylight_hours=='':
             low_hour = 9
             high_hour = 17
+            self.features = self.features[self.features.index.hour.isin(range(low_hour, high_hour)) ]
+        elif len(self.daylight_hours)==2:
+            low_hour, high_hour = self.daylight_hours[0], self.daylight_hours[1]
             self.features = self.features[self.features.index.hour.isin(range(low_hour, high_hour)) ]
         else: 
             self.myprint('Daylight hours attribute is not valid.', 1)
