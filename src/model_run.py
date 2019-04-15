@@ -49,8 +49,6 @@ class ModelRun:
         If False, the power from the list (assuming len>1) is summed to create the target.
     observation_freq : 'str'
         Frequency of observations used as input to use in analysis.  Default to 1H. 
-    log_target : Boolean
-        If true, train on the log of the target, otherwise no change to target.
     solar_geometry : Three states {'solar', 'both', ''}
         If 'solar' or 'both', create solar geometry features from the sun's location and site metadata.
         If 'solar', don't craete the month & hour features.
@@ -104,7 +102,7 @@ class ModelRun:
 
     def __init__(self, power_list, wh_list, power_data, wh_data, model_def, start_date, 
                  end_date=datetime.datetime.today(), forecast_hours_ahead=0, power_sum_normalized = True, 
-                 observation_freq='1H', log_target=False, solar_geometry=[], feature_list=[], lagged_variables={}, 
+                 observation_freq='1H', solar_geometry=[], feature_list=[], lagged_variables={}, 
                  daylight_hours='', clean_sigma=5, goto_db = '', 
                  split_model=[], verbose=2, **kwargs):
 
@@ -119,7 +117,6 @@ class ModelRun:
         self.forecast_hours_ahead = forecast_hours_ahead
         self.power_sum_normalized = power_sum_normalized
         self.observation_freq = observation_freq
-        self.log_target = log_target
         self.solar_geometry = solar_geometry
         self.feature_list = feature_list
         self.lagged_variables = lagged_variables

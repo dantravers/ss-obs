@@ -89,9 +89,9 @@ class Power(SiteData):
         meta = pd.DataFrame(self.dbc.query(select_sql), columns=meta_cols)
         if len(meta)>0:
             meta[(meta.ss_id >= int(query_config['enphase_min'])) & (meta.ss_id < int(query_config['enphase_max']))]\
-            ['orientation'] = meta['orientation_assessed']
+            ['orientation'] = meta['orientation_assessed'] # ** this gives a warning about applying to slide of df. 
             meta[(meta.ss_id >= int(query_config['enphase_min'])) & (meta.ss_id < int(query_config['enphase_max']))]\
-            ['tilt'] = meta['tilt_assessed']
+            ['tilt'] = meta['tilt_assessed']   # ** this gives a warning about applying to slide of df. 
             meta = meta.rename(columns={'ss_id' : 'site_id'}).set_index('site_id')
             meta = meta.drop(['orientation_assessed', 'tilt_assessed'], axis=1)
             self.myprint('Extracted {} rows of midas metadata from db for site_ids: {}'.format(len(meta), str(site_list).strip('[]')), 2) 
