@@ -8,3 +8,4 @@ tests/__pycache__/*.pyc
 .pytest_cache/v/cache/stepwise
 .pytest_cache/v/cache/lastfailed
 src/pv_test.py
+src/wforecast.ini

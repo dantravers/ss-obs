@@ -270,7 +270,7 @@ class SiteData:
             hdf.close()
         with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'a') as hdf:    
             hdf.put(hdf_key, data, format='Table', data_columns=True)
-            hdf.get_storer(hdf_key).attrs.time_updated=datetime.datetime.utcnow()
+            #hdf.get_storer(hdf_key).attrs.time_updated=datetime.datetime.utcnow()
             self.myprint('Saved {} rows to hdf store {} /{}'.format(data.shape[0], os.path.join(hdf_config['store_path'],hdf_config['store_name']), hdf_key), 1)
             hdf.close()
 
