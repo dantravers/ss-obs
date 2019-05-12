@@ -15,7 +15,7 @@ from pv_ml_models import cross_validate_grouped, coef_lr_grouped
 from model_definition import ModelDefinition
 
 # directory for all test data (hdfs & bench_*.csv)
-data_dir = 'C:/Users/Dan Travers/Documents/GitHub/ss-obs/tests'
+data_dir = 'C:/Users/Dan Travers/Documents/GitHub/ss-obs/tests/test_data'
 # setup model definitions: 
 kwargs_empty = {}
 lr = ModelDefinition('linear_r', ['month', 'hour'], 10, **kwargs_empty, text='Mth-Hr split')

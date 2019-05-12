@@ -1,8 +1,9 @@
 {
-    "python.unitTest.pyTestEnabled": true,
-    "python.unitTest.unittestEnabled": false,
-    "python.unitTest.nosetestsEnabled": false,
-    "python.unitTest.pyTestArgs": [
+    "python.testing.pyTestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pyTestArgs": [
         "tests"
     ],
+    "python.pythonPath": "C:\\ProgramData\\Anaconda3\\python.exe",
 }

@@ -8,7 +8,7 @@ import datetime
 import power as pw
 
 # directory for all test data (hdfs & bench_*.csv)
-data_dir = 'C:/Users/Dan Travers/Documents/GitHub/ss-obs/tests'
+data_dir = 'C:/Users/Dan Travers/Documents/GitHub/ss-obs/tests/test_data'
 # setup dates and Load data
 start = datetime.date(2016,1,1)
 end = datetime.date(2018, 1, 1)

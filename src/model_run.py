@@ -8,7 +8,10 @@ import os
 import datetime
 from datetime import timedelta
 from power import Power
+import wforecast
+import midas
 from midas import Midas
+from wforecast import WForecast
 from pvlib.solarposition import get_solarposition
 from pvlib.irradiance import get_extra_radiation
 from model_definition import ModelDefinition
@@ -31,9 +34,9 @@ class ModelRun:
         Could be src_ids, or forecast weather locations.
     power_data : obj:'Power'
         Pass in a reference to instance of the Power object to populate data into. 
-    wh_data : obj:'Midas' or 'Forecast'
+    wh_data : obj:'Midas' or 'WForecast'
         Pass in a reference to instance of the Midas object if modelling on actuals, 
-        or a 'Forecast' object is modelling on forecast weather.
+        or a 'WForecast' object is modelling on forecast weather.
     model_def : obj:'ModelDefinition'
         Object with the definition of the type and the parameters of the machine learning model and cross-validation.  
         The kwargs contain the parameters which vary between machine learning model.
@@ -41,9 +44,9 @@ class ModelRun:
         Start date of analysis
     end_date : Date
         End date of anlaysis
-    forecast_hours_ahead : float
+    forecast_days_ahead : int
         Optional attribute.  If forecast weather rather than actual weather is being used, 
-        the number of hours ahead that the forecast is created as-of is set here.
+        the number of days ahead of the forecast relative to the forecast base.
     power_sum_normalized : Boolean
         If True, the power from the list (assuming len>1) is averaged to create the target.  
         If False, the power from the list (assuming len>1) is summed to create the target.
@@ -70,16 +73,25 @@ class ModelRun:
         Number of standard deviations of the outturn away from the mean for that month-hour to remove.
         Always remove zero outturn values.
         ** this could be done as part of the Power object
-    zero_irr_tolarance : limits amount of irradiance above which any zero measurements of outturn will be removed.
-    features : DataFrame
-        Dataframe indexed by datetime storing all the features to be used in the machine learning.
-        The features are created in the method create_features, based on weather and user parameterization.
+    goto_db : str
+        Parameter to define where Power and Midas classes should fetch data from.  See class definitions.
+    goto_file : str
+        Parameter to define where WForecast class should fetch data from.  See class definition. 
+    zero_irr_tolerance : float
+        Limits amount of irradiance above which any zero measurements of outturn will be removed.
+        Expressed as a fraction [0,1] of the maximum irradiance recorded for each site.
     verbose: int
         Verbosity to control the level of printed output.  
         0 = None
         1 = Errors
         2 = Significant information
         3 = All messages and logging information
+    
+    Attributes
+    ----------
+    features : DataFrame
+        Dataframe indexed by datetime storing all the features to be used in the machine learning.
+        The features are created in the method create_features, based on weather and user parameterization.
     target : Series
         Series indexed on datetime indicating the target to be used.
         Either a single outturn / load series, or the sum of a series of outturn / load series.
@@ -101,9 +113,9 @@ class ModelRun:
     version = '0.1'
 
     def __init__(self, power_list, wh_list, power_data, wh_data, model_def, start_date, 
-                 end_date=datetime.datetime.today(), forecast_hours_ahead=0, power_sum_normalized = True, 
+                 end_date=datetime.datetime.today(), forecast_days_ahead=0, power_sum_normalized = True, 
                  observation_freq='1H', solar_geometry=[], feature_list=[], lagged_variables={}, 
-                 daylight_hours='', clean_sigma=5, goto_db = '', 
+                 daylight_hours='', clean_sigma=5, goto_db='', goto_file='Cache', 
                  split_model=[], verbose=2, **kwargs):
 
         # assign attributes
@@ -114,7 +126,7 @@ class ModelRun:
         self.model_def = model_def
         self.start_date = start_date
         self.end_date = end_date
-        self.forecast_hours_ahead = forecast_hours_ahead
+        self.forecast_days_ahead = forecast_days_ahead
         self.power_sum_normalized = power_sum_normalized
         self.observation_freq = observation_freq
         self.solar_geometry = solar_geometry
@@ -123,6 +135,7 @@ class ModelRun:
         self.daylight_hours = daylight_hours
         self.clean_sigma = clean_sigma
         self.goto_db = goto_db
+        self.goto_file = goto_file
         self.verbose = verbose
         self.mods = ''
         # run methods to populate data:
@@ -151,7 +164,13 @@ class ModelRun:
 
     def populate_wh(self):
         """ Populates the weather data object with requested data."""
-        self.wh_data.load_data(self.wh_list, self.start_date - timedelta(1), self.end_date, goto_db = self.goto_db)
+        if not isinstance(self.wh_data, (wforecast.WForecast, midas.Midas)):
+            print('class neither WForecast nor Midas', type(self.wh_data))
+        if isinstance(self.wh_data, (wforecast.WForecast)):
+            self.wh_data.load_data(pd.DataFrame(self.wh_list, columns=['f_id']), self.start_date - timedelta(self.forecast_days_ahead+1)\
+                , self.end_date - timedelta(self.forecast_days_ahead), goto_file=self.goto_file)
+        else:
+            self.wh_data.load_data(self.wh_list, self.start_date - timedelta(1), self.end_date, goto_db=self.goto_db)
 
     def populate_power(self):
         """ Populates the power data object with requested data. """
@@ -200,7 +219,9 @@ class ModelRun:
         # copy weather data into features attributes, taking 5 extra days either side for used in lagged features
         # below overly complex line is what I currently have.  Feels like I should be able to do the line above, or 
         # something simpler.
-        self.features = self.wh_data.get_obs().loc[self.wh_list, :].reset_index(level=0).tz_localize(None).\
+        if len(self.wh_data.get_obs(self.forecast_days_ahead)) == 0: 
+            self.myprint("Error: No observations in the dataset passed in", 1)
+        self.features = self.wh_data.get_obs(self.forecast_days_ahead).loc[self.wh_list, :].reset_index(level=0).tz_localize(None).\
             loc[(self.start_date-timedelta(5)).strftime('%Y%m%d'): (self.end_date+timedelta(5)).strftime('%Y%m%d')]\
                 .set_index('site_id', append=True).swaplevel()
         # find columns to drop first, then add lagged features, then drop columns:

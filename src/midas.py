@@ -5,15 +5,18 @@
 # Inherited from super class SiteData implements Midas data observations
 # Potential change would be to store as numpy arrays and convert to dataframe on extraction.
 
-import pandas as pd
-import numpy as np
-import os
-import datetime
 import configparser
-from datetime import timedelta
-from dbconnector import DBConnector
+import datetime
+import os
 import sys
+from datetime import timedelta
+
+import numpy as np
+import pandas as pd
+from dbconnector import DBConnector
+
 from sitedata import SiteData, check_missing_hours
+
 
 class Midas(SiteData): 
     """ Stores weather data readings from Midas stations and relevant meta-data
@@ -200,7 +203,7 @@ class Midas(SiteData):
         self.myprint('{} rows of weather data from WH'.format(wh.shape[0]), 3)
         return(wh)
     
-    def get_obs(self, freq='1H'):
+    def get_obs(self, forecast_days_ahead, freq='1H'):
         """ function to return a dataframe of observation data aggregated to requested frequency level.
         Function is overridden for the Forecast class, where forecast_hours_ahead is necessary.
 
@@ -214,6 +217,8 @@ class Midas(SiteData):
             Frequency at which the data should be returned to the user.  The only supported formats are
             currently 30m and 1H.
         """       
+        if forecast_days_ahead > 0:
+            self.myprint('forecast_days_ahead variable not used as actual weather being fetched', 3)
         if freq=='1H':
             return(self.obs)
         else: 

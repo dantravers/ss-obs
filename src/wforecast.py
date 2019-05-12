@@ -13,9 +13,10 @@ import configparser
 from datetime import timedelta
 import sys
 from sitedata import SiteData, check_missing_hours
+from midas import Midas
 from location_data_utils import read_netcdf_file
 
-class WForecast(SiteData): 
+class WForecast(Midas): 
     """ Stores numerical weather predictions and relevant meta-data
     
     Default config settings stored in wforecast.ini file, which provides hdf store configurations.
@@ -56,8 +57,8 @@ class WForecast(SiteData):
         self.forecast_max_days_ahead = int(self.config['query_settings']['forecast_max_days_ahead'])
         self.path = self.config['query_settings']['path']
 
-    def load_data(self, locations, path, start_date=None, \
-        end_date=datetime.datetime.now().date(), goto_file='Cache'):
+    def load_data(self, locations, path='C:\\Users\\Dan Travers\\Documents\\dbs\\weather\\ecmwf', \
+        start_date=None, end_date=datetime.datetime.now().date(), goto_file='Cache'):
         """ Method to load observations from netCDF files or cache for specified date range into object.
         Method populates data in self.obs dataframe and metadata is derived.
         The method always forces data in memory to be refreshed from the cache if available.  
@@ -65,13 +66,12 @@ class WForecast(SiteData):
 
         Parameters
         ----------
-        site_list : :obj:'list' of :obj:'int'
-            List of the site_ids to be populated in the Power object
-        locations : Series
-            Series containing a row for each location requested.  
-            This is the format as output by the function cross_locations.
-            The lat / lon in index levels 1, 2 (index level 0 is the pv farm site_id from cross_locations).  
-            The data is not used. 
+        locations : DataFrame
+            DataFrame containing a row for each location requested.  
+            The frame must have either a column named "f_id", or two columns named "latitude" and 
+            "longitude".  Where there is a choice, the method looks first for the presence of f_id, 
+            and if not uses the latitude and longitudes.
+            This frame is the format as output by the function get_fcst_locs (and cross_locations).
         path : str
             Path location of the (netCDF) files if queried from disk.
         start_date : date
@@ -95,49 +95,57 @@ class WForecast(SiteData):
             start_date = self.default_earliest_date
         if not isinstance(start_date, datetime.date) or not isinstance(end_date, datetime.date):
             raise TypeError("start_date and end_date must be of type datetime.date.")
+        if not 'f_id' in locations.columns:
+            locations['f_id'] = locations.latitude.map(str) + ':' + locations.longitude.map(str)
         date_list = [start_date - timedelta(self.forecast_max_days_ahead) + datetime.timedelta(days=x) \
             for x in range(0, (end_date-(start_date-timedelta(self.forecast_max_days_ahead))).days)]
-        # ** Should ideally improve this below check to check for missing dates per id, so you have a 2-d matrix
-        if len(self.obs)>0: 
-            date_list = [x for x in date_list if x not in self.obs.index.get_level_values('fcst_base').unique().date]
-        if len(date_list) > 0: 
+        # ** Should later improve this below check to check for missing dates per id, so you have a 2-d matrix
+        if goto_file == 'None':
+            pass
+        else:
+            if len(self.obs)>0: 
+                date_list = [x for x in date_list if x not in self.obs.index.get_level_values('fcst_base').unique().date]
+            if len(date_list) > 0: 
             # find data in cache and merge with data in-memory
-            if goto_file == 'Cache':  
-                temp = pd.DataFrame([])
-                original_len = len(self.obs)
-                id_list = (locations.index.get_level_values(1).map(str) + ':' + locations.index.get_level_values(2).map(str)).tolist()
-                with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'r') as hdf:
-                    temp = hdf.select(hdf_config['obs_hdf_key'], where = 'id in id_list')    # change the query to be site_id in site_list
-                if len(temp) > 0: 
-                    self.obs = self.obs.append(temp, sort=False)
+                if goto_file == 'Cache':  
+                    temp = pd.DataFrame([])
+                    original_len = len(self.obs)
+                    id_list = locations.f_id.tolist()
+                    with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'r') as hdf:
+                        temp = hdf.select(hdf_config['obs_hdf_key'], where = 'site_id in id_list')    # change the query to be site_id in site_list
+                    if len(temp) > 0: 
+                        self.obs = self.obs.append(temp, sort=False)
+                        no_dups = np.sum(self.obs.index.duplicated())
+                        self.obs = self.obs[~self.obs.index.duplicated(keep='first')]
+                    self.myprint('Loaded {} entries from cache, merged with {} rows of data in memory with {} duplicates\
+                            for total of {} rows.'.format(len(temp), original_len, no_dups, len(self.obs)), 2)
+                # toto file to find data and merge with data in memory    
+                elif goto_file == 'File':
+                    original_len = len(self.obs)
+                    load_count = 0
+                    for file in os.listdir(path):
+                        if datetime.datetime.strptime(file[5:-3], '%Y-%m-%dT%H%%3A%M%%3A%S').date() in date_list: 
+                            day = read_netcdf_file(file, path, locations)
+                            load_count += len(day)
+                            if self.obs.shape[0]==0:
+                                self.obs = day.copy()
+                            else:
+                                self.obs = self.obs.append(day)
                     no_dups = np.sum(self.obs.index.duplicated())
                     self.obs = self.obs[~self.obs.index.duplicated(keep='first')]
-                self.myprint('Loaded {} entries from cache, merged with {} rows of data in memory with {} duplicates\
-                        for total of {} rows.'.format(len(temp), original_len, no_dups, len(self.obs)), 2)
-            # toto file to find data and merge with data in memory    
-            elif goto_file == 'File':
-                original_len = len(self.obs)
-                load_count = 0
-                for file in os.listdir(path):
-                    if datetime.datetime.strptime(file[5:-3], '%Y-%m-%dT%H%%3A%M%%3A%S').date() in date_list: 
-                        day = read_netcdf_file(file, path, locations)
-                        load_count += len(day)
-                        if self.obs.shape[0]==0:
-                            self.obs = day.copy()
-                        else:
-                            self.obs = self.obs.append(day)
-                no_dups = np.sum(self.obs.index.duplicated())
-                self.obs = self.obs[~self.obs.index.duplicated(keep='first')]
-                self.myprint('Loaded {} rows data from files, merged with existing {} rows '\
-                    'with {} duplicates for total of {} rows.'.format(load_count, original_len, no_dups, len(self.obs)), 2)
-                self.metadata = pd.DataFrame([], index=day.index.get_level_values('id').unique())
-                self.metadata['latitude'] = self.metadata.index.to_series().str.split(':').str[0]
-                self.metadata['longitude'] = self.metadata.index.to_series().str.split(':').str[1]
-            else:
-                self.myprint('goto_file parameter must be Cache, File', 0)
+                    self.myprint('Loaded {} rows data from files, merged with existing {} rows '\
+                        'with {} duplicates for total of {} rows.'.format(load_count, original_len, no_dups, len(self.obs)), 2)
+                    if load_count > 0:
+                        new_metadata = pd.DataFrame([], index=day.index.get_level_values('site_id').unique())
+                        new_metadata['latitude'] = new_metadata.index.to_series().str.split(':').str[0]
+                        new_metadata['longitude'] = new_metadata.index.to_series().str.split(':').str[1]
+                        self.metadata = self.metadata.append(new_metadata)
+                        self.metadata = self.metadata[~self.metadata.index.duplicated(keep='first')]
+                else:
+                    self.myprint("goto_file parameter must be 'Cache', 'File' or 'None'", 0)
 
 
-    def get_obs(self, days_ahead = [1], freq='1H'):
+    def get_obs(self, days_ahead = 1, freq='1H'):
         """ Function to return a dataframe of weather forecast data sliced to specified number of days ahead only, 
         and aggregated to requested frequency level.
 
@@ -156,12 +164,16 @@ class WForecast(SiteData):
         """       
 
         if freq=='1H':
-            idx = pd.IndexSlice
-            if len(days_ahead) > 0:
-                time_deltas = [timedelta(x) for x in days_ahead]
-                return(self.obs.loc[idx[:, :, :, time_deltas], :])
-            else:
-                return(self.obs.loc[idx[:, :, :, :], :])
+            if len(self.obs)>0:
+                idx = pd.IndexSlice
+                df = self.obs.loc[idx[:, :, :, timedelta(days_ahead)], :].reset_index(['fcst_base', 'ahead'], drop=True)
+                df.irr = df.irr.diff() # take diff.  This needs to be reconsidered for the forecast 4 days out, where hour steps up in 3's
+                # remove the NaN in first entry and the negative values when you to from one forecast base to the next:
+                df.loc[df.index.get_level_values('datetime').hour==0, 'irr'] = 0 
+                df.loc[df.irr<0] = 0 # remove very small negative values which appear at times.
+            else: 
+                df = pd.DataFrame([])    
+            return(df)
         else: 
             self.myprint('Invalid frequency to request for weather data.', 1) 
             return(None)

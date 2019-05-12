@@ -9,5 +9,8 @@
   "tests/test_load_obs_from_db.py::test_load_midas_obs_from_db",
   "tests/test_load_obs_from_db.py::test_load_pvstream_obs_from_db",
   "tests/test_load_obs_from_db.py::test_load_additional_midas_obs_from_db",
-  "tests/test_load_obs_from_db.py::test_load_additional_pvstream_obs_from_db"
+  "tests/test_load_obs_from_db.py::test_load_additional_pvstream_obs_from_db",
+  "tests/test_load_obs_from_db.py::test_locations_fn_and_read_netcdf_file",
+  "tests/test_load_obs_from_db.py::test_wforecast_load_from_file",
+  "tests/test_load_obs_from_db.py::test_wforecast_get_obs_function"
 ]
