@@ -51,7 +51,7 @@ class SiteData:
         self.verbose = verbose
 
     def load_data(self, site_list, start_date=None, end_date=datetime.datetime.now().date()\
-    , date_ranges={}, goto_db=''):
+    , goto_db=''):
         """ Method to load metadata and observations from db or cache for specified date range into object.
         Method populates data in self.metadata and self.obs dataframes.
         The method always forces data in memory to be refreshed from the cache.  
@@ -67,11 +67,6 @@ class SiteData:
         end_date : date
             End date from which to load in data.  Loads data up to but not including end date
             Optional parameter - if no dates are mentioned, all data is loaded.
-        date_ranges : dict
-            Dictionary of start date / end date typles keyed on site_id.  If site_id is in the dictionary, 
-            the dates within that date range are loaded for the site_id. 
-            If site_id is not in dictionary, the data is attempted to be loaded using start_date and end_date
-            if they exist.  If they are not present, all data available is loaded from the class parameter earliest_date to today.
         goto_db : str
             Three-state parameter to indicate whether to go to the database to fetch data.
             Always - indicates always goto db, and don't look in cache.
@@ -81,7 +76,7 @@ class SiteData:
         if not isinstance(start_date, datetime.date) or not isinstance(end_date, datetime.date):
             raise TypeError("start_date and end_date must be of type datetime.date.")
         self.load_metadata(site_list, goto_db)
-        self.load_observations(site_list, start_date, end_date, date_ranges, goto_db)
+        self.load_observations(site_list, start_date, end_date, goto_db)
 
     def load_metadata(self, site_list, goto_db=''):
         """ Method to populate or append to the metadata object from a list of site_ids.
@@ -132,7 +127,7 @@ class SiteData:
         raise NotImplementedError
     
     def load_observations(self, site_list, start_date=None, end_date=datetime.datetime.now().date()\
-    , date_ranges={}, goto_db=''):
+    , goto_db=''):
         """ Method to load observations from db or cache for specified date range into dataframe.
         Method populates data in self.obs dataframe.
         The method always forces data in memory to be refreshed from the cache.  
@@ -148,11 +143,6 @@ class SiteData:
         end_date : date
             End date from which to load in data.  Loads data up to but not including end date
             Optional parameter - if no dates are mentioned, all data is loaded.
-        date_ranges : dict
-            Dictionary of start date / end date typles keyed on site_id.  If site_id is in the dictionary, 
-            the dates within that date range are loaded for the site_id. 
-            If site_id is not in dictionary, the data is attempted to be loaded using start_date and end_date
-            if they exist.  If they are not present, all data available is loaded from the class parameter earliest_date to today.
         goto_db : str
             Three-state parameter to indicate whether to go to the database to fetch data.
             Always - indicates always goto db, and don't look in cache.
@@ -163,7 +153,7 @@ class SiteData:
         if start_date==None:
             start_date = self.default_earliest_date
         for site_id in site_list:
-            site_start, site_end = fetch_start_end_dates(site_id, start_date, end_date, date_ranges)
+            site_start, site_end = fetch_start_end_dates(site_id, start_date, end_date)
             self.myprint('--site_ids: {}'.format(site_id), 2)
             # ** for each site look at the first and last dates in the obs df and get more data if required.
             try: 
@@ -308,16 +298,13 @@ class SiteData:
         if message_priority<=self.verbose:
             print(message)
 
-def fetch_start_end_dates(id, start_date, end_date, date_ranges={}):
+def fetch_start_end_dates(id, start_date, end_date):
     """ function to return start and end dates for specific site based on 
     either the date dictionary or the generic start and end dates 
     """
-    try:
-        start = date_ranges[id][0]
-        end = date_ranges[id][1]
-    except KeyError:
-        start = start_date
-        end = end_date
+
+    start = start_date
+    end = end_date
     return(start, end)
 
 def check_missing_hours(df, start_date, end_date, type='-', id='Missing ID', periods_per_day=24, verbose_setting=3):
