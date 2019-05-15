@@ -219,7 +219,7 @@ class Power(SiteData):
                                 batch_start_date.strftime("'%Y-%m-%d'"), batch_end_date.strftime("'%Y-%m-%d'")))
             result = self.dbc.query(select_sql)
             df_temp = pd.DataFrame(result, columns=pvcompact_cols)
-            df_temp.rename({'ss_id' : 'site_id'}, axis=1,  inplace=True)
+            df_temp.rename(columns={'ss_id' : 'site_id'}, inplace=True)
             pvs = pvs.append(df_temp, ignore_index=True)
             batch_end_date -= datetime.timedelta(days=batch_size)        
         # stack wide format data:
