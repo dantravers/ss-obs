@@ -102,7 +102,7 @@ class SiteData:
                 try:
                     with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'r') as hdf:
                         temp = hdf.select(hdf_config['meta_hdf_key'], where = 'index = site_id_short')
-                    self.metadata = self.metadata.append(temp, sort=False)
+                    self.metadata = self.metadata.append(temp)
                     site_id_short = [site_id for site_id in site_id_short if site_id not in self.metadata.index.values]
                 except KeyError:
                     pass
@@ -168,7 +168,7 @@ class SiteData:
                     with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'r') as hdf:
                         temp = hdf.select(hdf_config['obs_hdf_key'], where = 'site_id = site_id')
                     if len(temp) > 0: 
-                        self.obs = self.obs.append(temp, sort=False)
+                        self.obs = self.obs.append(temp)
                         self.obs = self.obs[~self.obs.index.duplicated(keep='first')]
                         first_date = self.obs.loc[site_id, :].index.min().date() # first_date is date of first values in df
                         last_date = self.obs.loc[site_id, :].index.max().date()  # last_date is date after values in df
@@ -252,7 +252,7 @@ class SiteData:
         with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'r') as hdf:
             try:
                 current = hdf.get(hdf_key)
-                data = data.append(current, sort=False)
+                data = data.append(current)
                 data = data[~data.index.duplicated(keep='last')]
                 self.myprint('{} rows already in hdf {} /{}'.format(current.shape[0], os.path.join(hdf_config['store_path'],hdf_config['store_name']), hdf_key), 2)
             except KeyError: 

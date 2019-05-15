@@ -95,7 +95,7 @@ class Power(SiteData):
             meta = meta.rename(columns={'ss_id' : 'site_id'}).set_index('site_id')
             meta = meta.drop(['orientation_assessed', 'tilt_assessed'], axis=1)
             self.myprint('Extracted {} rows of midas metadata from db for site_ids: {}'.format(len(meta), str(site_list).strip('[]')), 2) 
-            self.metadata = self.metadata.append(meta, sort=False)
+            self.metadata = self.metadata.append(meta)
         else:
             self.myprint('No metadata extracted for site_ids: {}'.format(str(site_list).strip('[]')), 2) 
 

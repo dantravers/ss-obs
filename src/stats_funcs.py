@@ -29,7 +29,7 @@ def generate_error_stats(result, cap, splits=True):
     if splits: 
         no_zeros_result = result.groupby(['month', 'hour']).filter(lambda x: x['outturn'].sum()>0)
         stat_temp = stat_temp.append(no_zeros_result.groupby(['month', 'hour']).\
-                                 apply(stats, cap=cap).reset_index(), ignore_index=True, sort=True)
+                                 apply(stats, cap=cap).reset_index(), ignore_index=True)
     return(stat_temp[['month', 'hour', 'count', 'MBE', 'MAE', 'RMSE', 'wMBE', 'wMAE', 'wRMSE', 'Rsqd']])
 
 def stats(df, cap):

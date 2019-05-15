@@ -114,7 +114,7 @@ class WForecast(Midas):
                     with pd.HDFStore(os.path.join(hdf_config['store_path'],hdf_config['store_name']), 'r') as hdf:
                         temp = hdf.select(hdf_config['obs_hdf_key'], where = 'site_id in id_list')    # change the query to be site_id in site_list
                     if len(temp) > 0: 
-                        self.obs = self.obs.append(temp, sort=False)
+                        self.obs = self.obs.append(temp)
                         no_dups = np.sum(self.obs.index.duplicated())
                         self.obs = self.obs[~self.obs.index.duplicated(keep='first')]
                     self.myprint('Loaded {} entries from cache, merged with {} rows of data in memory with {} duplicates\

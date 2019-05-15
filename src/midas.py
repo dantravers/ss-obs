@@ -78,7 +78,7 @@ class Midas(SiteData):
         if len(meta)>0:
             meta = meta.set_index('site_id')
             print('Extracted {} rows of midas metadata from db for src_ids: {}'.format(len(meta), str(site_list).strip('[]'))) # verbosity=2
-            self.metadata = self.metadata.append(meta, sort=False)
+            self.metadata = self.metadata.append(meta)
         else:
             print('No metadata extracted for src_ids: {}'.format(str(site_list).strip('[]'))) #verbosity=2
 
@@ -110,7 +110,7 @@ class Midas(SiteData):
         temp.drop(['site_idwh'], axis=1, inplace=True)
         check_missing_hours(temp, start_date, end_date, 'From db: src_id: ', src_id, self.verbose) 
         temp = temp.set_index('site_id', append=True).swaplevel()
-        self.obs = self.obs.append(temp, sort=False)
+        self.obs = self.obs.append(temp)
         self.obs = self.obs[~self.obs.index.duplicated(keep='last')]
         super(Midas, self).load_obs_db(src_id, start_date, end_date, graph)
 
