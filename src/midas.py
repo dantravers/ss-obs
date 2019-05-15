@@ -50,7 +50,7 @@ class Midas(SiteData):
         """
         super(Midas, self).__init__(verbose)
         self.config = configparser.ConfigParser()
-        self.config.read('C:/Users/Dan Travers/Documents/GitHub/ss-obs/src/midas.ini')
+        self.config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/midas.ini'))
         # update config file for any local configs passed in:
         for section in self.config:
             if section in local_config:

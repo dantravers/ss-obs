@@ -1,5 +1,6 @@
 import configparser
 import datetime
+import os
 config = configparser.ConfigParser()
 """
 dbc : :obj:'DBConnector'
@@ -31,5 +32,5 @@ config['query_settings']['ss_id_metadata_object_cols'] = 'ss_id, urn, latitude, 
 tilt_assessed, kWp, area, array_count, operational_at' # columns saved to dataframe (currently all)
 config['query_settings']['default_earliest_date'] = '2010-01-01'
 config['query_settings']['ss30_batch_size'] = '30'
-with open('C:\\Users\\Dan Travers\\Documents\\GitHub\\ss-obs\\src\\pvstream.ini', 'w') as configfile:
+with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/pvstream.ini'), 'w') as configfile:
     config.write(configfile)

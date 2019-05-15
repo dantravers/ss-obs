@@ -1,5 +1,6 @@
 import configparser
 import datetime
+import os
 config = configparser.ConfigParser()
 """
 store_name : str
@@ -24,5 +25,5 @@ config['query_settings'] = {}
 config['query_settings']['default_earliest_date'] = '2018-01-01'
 config['query_settings']['site_id_metadata_object_cols'] = 'name, customer, latitude, longitude, kWp' 
 config['query_settings']['file_path'] = "C:\\Users\\Dan Travers\\Google Drive\\Bryt\\Modelling\\data"
-with open('C:\\Users\\Dan Travers\\Documents\\GitHub\\ss-obs\\src\\load.ini', 'w') as configfile:
+with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/load.ini'), 'w') as configfile:
     config.write(configfile)
