@@ -223,7 +223,7 @@ class Power(SiteData):
             pvs = pvs.append(df_temp, ignore_index=True)
             batch_end_date -= datetime.timedelta(days=batch_size)        
         # stack wide format data:
-        if pvs.empty:
+        if pvs.empty or pvs.set_index(['date', 'site_id']).fillna(0).sum().sum() == 0:
             pvflat=pd.DataFrame([])
             self.myprint('{} - no data in db between {} and {}'.\
             format(site_id, start_date.strftime("'%Y-%m-%d'"), end_date.strftime("'%Y-%m-%d'")), 1)
