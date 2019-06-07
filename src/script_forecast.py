@@ -7,22 +7,15 @@ from datetime import timedelta
 
 import numpy as np
 import pandas as pd
-import ss_utilities.generic_tools
-#from ss_utilities.generic_tools import haversine_np
 import configparser
 
 import midas as md
-#import model_definition
-import model_run as mr
 import power as pw
-#import pv_ml_models
-import stats_funcs
 import wforecast as wf
 from forecasting_funcs import x_val_results
 from location_data_utils import (cross_locations, get_fcst_locs,
                                  get_longest_ss_ids, read_netcdf_file)
 from model_definition import ModelDefinition
-#from pv_ml_models import coef_lr_grouped, cross_validate_grouped
 
 
 def main():
