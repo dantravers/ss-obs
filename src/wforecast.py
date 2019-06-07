@@ -123,8 +123,9 @@ class WForecast(Midas):
                 elif goto_file == 'File':
                     original_len = len(self.obs)
                     load_count = 0
+                    time_sep = '%%3A' if os.name == 'nt' else ':'
                     for file in os.listdir(path):
-                        if datetime.datetime.strptime(file[5:-3], '%Y-%m-%dT%H%%3A%M%%3A%S').date() in date_list: 
+                        if datetime.datetime.strptime(file[5:-3], '%Y-%m-%dT%H{0}%M{0}%S'.format(time_sep)).date() in date_list: 
                             day = read_netcdf_file(file, path, locations)
                             load_count += len(day)
                             if self.obs.shape[0]==0:
