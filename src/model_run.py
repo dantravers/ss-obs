@@ -165,11 +165,12 @@ class ModelRun:
     def populate_wh(self):
         """ Populates the weather data object with requested data."""
         if not isinstance(self.wh_data, (wforecast.WForecast, midas.Midas)):
-            print('class neither WForecast nor Midas', type(self.wh_data))
+            print('class neither WForecast nor Midas, but is of type:', type(self.wh_data))
         if isinstance(self.wh_data, (wforecast.WForecast)):
             self.wh_data.load_data(pd.DataFrame(self.wh_list, columns=['f_id']), self.start_date - timedelta(self.forecast_days_ahead+1)\
                 , self.end_date - timedelta(self.forecast_days_ahead), goto_file=self.goto_file)
         else:
+            print(self.wh_list, self.start_date - timedelta(1), self.end_date, self.goto_db)
             self.wh_data.load_data(self.wh_list, self.start_date - timedelta(1), self.end_date, goto_db=self.goto_db)
 
     def populate_power(self):
@@ -220,7 +221,7 @@ class ModelRun:
         # below overly complex line is what I currently have.  Feels like I should be able to do the line above, or 
         # something simpler.
         if len(self.wh_data.get_obs(self.forecast_days_ahead)) == 0: 
-            self.myprint("Error: No observations in the dataset passed in", 1)
+            self.myprint("Error: No observations in the weather dataset passed in", 1)
         self.features = self.wh_data.get_obs(self.forecast_days_ahead).loc[self.wh_list, :].reset_index(level=0).tz_localize(None).\
             loc[(self.start_date-timedelta(5)).strftime('%Y%m%d'): (self.end_date+timedelta(5)).strftime('%Y%m%d')]\
                 .set_index('site_id', append=True).swaplevel()

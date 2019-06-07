@@ -114,7 +114,7 @@ def test_locations_fn_and_read_netcdf_file():
     locations = get_fcst_locs(site_list, os.path.join(netcdf_dir, netcdf_file), 1)
     day = read_netcdf_file(netcdf_file, netcdf_dir, locations)
     day_bench = pd.read_pickle(os.path.join(data_dir, 'day_bench.pickle'))
-    pd.testing.assert_frame_equal(day, day_bench)
+    pd.testing.assert_frame_equal(day.sort_index(level=[0, 1, 2, 3]), day_bench.sort_index(level=[0, 1, 2, 3]))
 
 def test_wforecast_load_from_file():
     s = datetime.datetime(2016, 1, 1).date() 
@@ -127,8 +127,8 @@ def test_wforecast_load_from_file():
     wforecast = wf.WForecast(3)
     wforecast.load_data(locations, netcdf_dir, s, e, 'File')
 
-    pd.testing.assert_frame_equal(wforecast.obs, wforecast_bench.obs)
-    pd.testing.assert_frame_equal(wforecast.metadata, wforecast_bench.metadata)
+    pd.testing.assert_frame_equal(wforecast.obs.sort_index(level=[0, 1, 2]), wforecast_bench.obs.sort_index(level=[0, 1, 2]))
+    pd.testing.assert_frame_equal(wforecast.metadata.sort_index(level=[0]), wforecast_bench.metadata.sort_index(level=[0]))
 
 def test_wforecast_get_obs_function():
     with open(os.path.join(data_dir, 'wforecast_bench.pickle'), 'rb') as f:
