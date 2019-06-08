@@ -16,7 +16,7 @@ from pvlib.solarposition import get_solarposition
 from pvlib.irradiance import get_extra_radiation
 from model_definition import ModelDefinition
 from pv_ml_models import cross_validate_grouped, coef_lr_grouped
-from stats_funcs import generate_error_stats, heatmap_summary_stats, scatter_results
+from stats_funcs import generate_error_stats, scatter_results
 
 class ModelRun:
     """ 
