@@ -92,7 +92,10 @@ def read_netcdf_file(filename, filepath, locations):
     loc_dic = { 'latitude' : locations.latitude.unique(), \
                'longitude' : locations.longitude.unique()}
     DS = xr.open_dataset(file)
-    dsel = DS.sel(loc_dic)
+    if os.name == 'nt':
+        dsel = DS.sel(loc_dic)
+    else:
+        dsel = DS.sel(**loc_dic)
     di = dsel.ssrd * 0.00027777778
     dt = dsel.t2m - 273.15
     du = dsel.u10

@@ -22,7 +22,7 @@ def main():
     """ Function to output the average yield from list of ss_ids over a period of time.
     Arguments
     ---------
-    arg1 : name of the input.list file - shoudl be a list with ss_ids to query.
+    arg1 : name of the input.list file - should be a list with ss_ids to query.
     art2 : name of output file to write results to.
     """
 

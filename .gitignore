@@ -10,3 +10,5 @@ tests/__pycache__/*.pyc
 src/pv_test.py
 src/wforecast.ini
 src/config/*.ini
+src/locations.csv
+src/test_xarray.py
