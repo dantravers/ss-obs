@@ -4,7 +4,7 @@ import datetime
 from datetime import timedelta
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import seaborn as sns
 
 def generate_error_stats(result, cap, splits=True):
@@ -61,7 +61,7 @@ def stats(df, cap):
                     columns = ['count', 'MBE', 'MAE', 'RMSE', 'wMBE', 'wMAE', 'wRMSE', 'Rsqd'],
                     index=[0]) )
 
-def heatmap_summary_stats(run_stats):
+"""def heatmap_summary_stats(run_stats):
     try: 
         total = run_stats[run_stats['month'].isnull() & run_stats['hour'].isnull()]
         print(total[['count', 'MBE', 'MAE', 'RMSE', 'wMBE', 'wMAE', 'wRMSE']])
@@ -75,7 +75,7 @@ def heatmap_summary_stats(run_stats):
         f.add_subplot(1, 2, 2, title='MAE')
         sns.heatmap(month_hour.pivot(index='month', columns='hour')['MAE'], cmap='Blues').invert_yaxis()
     except KeyError:
-        print('No grouping statistics in results')
+        print('No grouping statistics in results')"""
 
 def scatter_results(results):
     # Scatter plot of a dataframe containing columns of outturn and differences

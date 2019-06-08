@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, cross_val_score, KFold, LeaveOneOut
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 def coef_lr(X, y):
     # generate the coef of the linear regression model trained on the entire dataset
@@ -163,11 +163,11 @@ def model_predict(x_train, y_train, x_test, model_def, graph=False):
         temp = pd.DataFrame([])
     return(temp)
 
-def graph_feature_importance(x_train, model):
+"""def graph_feature_importance(x_train, model):
     n_features = x_train.shape[1]
     plt.barh(range(n_features), model.feature_importances_, align='center')
     plt.yticks(np.arange(n_features), x_train.columns.values)
     plt.xlabel("Feature importance")
     plt.ylabel("Feature")
     plt.ylim(-1, n_features)
-    plt.show()
+    plt.show()"""
