@@ -61,8 +61,9 @@ def stats(df, cap):
                     columns = ['count', 'MBE', 'MAE', 'RMSE', 'wMBE', 'wMAE', 'wRMSE', 'Rsqd'],
                     index=[0]) )
 
-"""def heatmap_summary_stats(run_stats):
-    try: 
+def heatmap_summary_stats(run_stats):
+    pass
+    """    try: 
         total = run_stats[run_stats['month'].isnull() & run_stats['hour'].isnull()]
         print(total[['count', 'MBE', 'MAE', 'RMSE', 'wMBE', 'wMAE', 'wRMSE']])
     except KeyError:
