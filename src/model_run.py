@@ -144,8 +144,6 @@ class ModelRun:
         self.power_data.resample()
         self.get_target()
         self.create_features()
-        self.features.to_csv('feat_diag.csv')
-        self.target.to_csv('target_diag.csv')
         
     def cross_validate(self, capacity_metadata = True):
         """ Function runs the cross validation on the configuration of data provided.  
