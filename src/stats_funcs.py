@@ -79,17 +79,10 @@ def heatmap_summary_stats(run_stats):
         print('No grouping statistics in results')"""
 
 def scatter_results(results):
-    # Scatter plot of a dataframe containing columns of outturn and differences
+    pass
+    """# Scatter plot of a dataframe containing columns of outturn and differences
     if 'diff' not in results.columns.values: 
         results['diff'] = results['forecast'] - results['outturn']
     grid = sns.jointplot(x='outturn', y='diff', data=results, kind='reg', ratio=10)
     grid.fig.set_figwidth(16)
-    grid.fig.set_figheight(4)
-
-def bar_compare(data1, data2, hue_selection, title1, title2):
-    #Bar chart comparing two sets of statistics from multiple runs, passed in long form
-    _, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(16,5), sharey=True)
-    sns.barplot(x='statistic', y='value', hue=hue_selection, data=data1, ax=ax1)
-    sns.barplot(x='statistic', y='value', hue=hue_selection, data=data2, ax=ax2)
-    ax1.set_title(title1)
-    ax2.set_title(title2)
+    grid.fig.set_figheight(4)"""
