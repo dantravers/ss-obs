@@ -135,5 +135,5 @@ def test_wforecast_get_obs_function():
         wforecast = pickle.load(f)
     obs_bench = pd.read_pickle(os.path.join(data_dir, 'obs_bench.pickle'))
 
-    pd.testing.assert_frame_equal(wforecast.get_obs(3), obs_bench)
+    pd.testing.assert_frame_equal(wforecast.get_obs(3).sort_index(level=[0]), obs_bench.sort_index(level=[0]))
     
