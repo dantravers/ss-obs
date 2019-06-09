@@ -293,7 +293,7 @@ class ModelRun:
         no_target = len(self.target)
         # restrict index to common entries of both features and target set by merging on inner.
         # perform following actions on the merged dataset.
-        self.features = pd.merge(self.features, self.target, 'inner', left_index=True, right_index=True, validate="1:1")
+        self.features = pd.merge(self.features, self.target, 'inner', left_index=True, right_index=True)
         #self.features = self.features.loc[self.target.index]
         #self.target = self.target.loc[self.features.index]
         no_joined = len(self.features)

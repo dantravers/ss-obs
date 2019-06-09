@@ -42,7 +42,7 @@ def main():
     location_ref = os.path.join(netcdf_path, location_ref_filename)
     # start / end dates
     s = datetime.datetime(2016, 1, 1).date()
-    e = datetime.datetime(2016,3, 1).date()
+    e = datetime.datetime(2018,1, 1).date()
     # ml model setup
     kwargs_empty = {}
     lr = ModelDefinition('linear_r', ['month', 'hour'], 5, **kwargs_empty, text='Mth-Hr split')
@@ -70,13 +70,12 @@ def main():
         f_id = row['f_id']
         print(ss_id, f_id)
         for model in [ grad]: 
-            lags = { 'lags' : {'irr' : []}} if model==lr else { 'lags' : {'irr' : [1, 2, 3, 4, -1, -2, -3]}}
+            lags = { 'lags' : {'irr' : []}} if model==lr else { 'lags' : {'irr' : [1, 2, 3, -1, -2]}}
             for i in range(0, 4): # loop for 4 days ahead.
                 print('forecast:', f_id, ss_id, model.ml_model, i)
                 tstats = tstats.append(x_val_results(ss_id, f_id, power, w_forecast, model, s, e, i, \
                                                     lags, \
-                                                    ['hour', 'month', 'extra'], 'Never', 'None', 2), \
-                                    sort=False)
+                                                    ['hour', 'month', 'extra'], 'Never', 'None', 2))
     tstats.to_csv(output_file)
     print('Finished')
 
