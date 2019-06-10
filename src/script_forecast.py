@@ -40,9 +40,12 @@ def main():
     if os.name == 'nt':
         location_ref_filename = location_ref_filename.replace(':', '%3A')
     location_ref = os.path.join(netcdf_path, location_ref_filename)
+
     # start / end dates
     s = datetime.datetime(2016, 1, 1).date()
     e = datetime.datetime(2018,1, 1).date()
+    goto_db = ''
+
     # ml model setup
     kwargs_empty = {}
     lr = ModelDefinition('linear_r', ['month', 'hour'], 5, **kwargs_empty, text='Mth-Hr split')
@@ -52,12 +55,12 @@ def main():
     with open(ss_file, 'r') as f:
         ss_list = f.readlines()
     ss_list = list(map(lambda x: int(x.strip()), ss_list))
-
     power = pw.Power(1)
-    w_forecast = wf.WForecast(2)
+    w_forecast = wf.WForecast(1)
+    power.load_metadata(ss_list)
+    power.load_data(ss_list, s, e, goto_db=goto_db)
 
     # find forecast locations, load weather forecast data and assocate with each ss_id
-    power.load_metadata(ss_list)
     locations = get_fcst_locs(power.metadata, filename=location_ref, n=1)
     w_forecast.load_data(locations, netcdf_path, s, e, goto_file="File")
     fpairings = pd.DataFrame(ss_list, columns=['ss_id']).merge(locations.astype({'site_id':np.int64}), left_on='ss_id', right_on='site_id', how='inner').drop('site_id', axis=1)
@@ -75,7 +78,7 @@ def main():
                 print('forecast:', f_id, ss_id, model.ml_model, i)
                 tstats = tstats.append(x_val_results(ss_id, f_id, power, w_forecast, model, s, e, i, \
                                                     lags, \
-                                                    ['hour', 'month', 'extra'], 'Never', 'None', 2))
+                                                    ['hour', 'month', 'extra'], goto_db, 'None', 2))
     tstats.to_csv(output_file)
     print('Finished')
 
