@@ -153,6 +153,7 @@ class ModelRun:
         self.results_ = cross_validate_grouped(self.features, \
                                                  self.target.iloc[:,0], \
                                                  self.model_def).sort_index()
+        self.results_.to_csv("C:/Users/Dan Travers/Google Drive/Projects/Explore/EPEX-Prices/Elexon prices/fcst-act.csv") # ** dummy
         self.runtime = datetime.datetime.now()-timerstart
         self.timestamp = datetime.datetime.now().replace(microsecond=0)
         self.myprint('Cross validation run completed in {} seconds'.format(self.runtime.seconds), 2)
@@ -160,7 +161,7 @@ class ModelRun:
             cap = self.target_capacity * 1000
         else:
             cap = self.target.iloc[:,0].max()
-        self.stats_ = generate_error_stats(self.results_, cap, splits=False)
+        self.stats_ = generate_error_stats(self.results_, cap, self.power_data.epex, self.power_data.sbsp, splits=False)
 
     def populate_wh(self):
         """ Populates the weather data object with requested data."""

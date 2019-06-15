@@ -149,7 +149,8 @@ def model_predict(x_train, y_train, x_test, model_def, graph=False):
         model = RandomForestRegressor(**model_def.kwargs)
         temp = model.fit(x_train, y_train).predict(x_test)
         if graph:
-            graph_feature_importance(x_train, model)
+            pass
+            #graph_feature_importance(x_train, model)
     elif model_def.ml_model == 'tree': 
         model = DecisionTreeRegressor(**model_def.kwargs)
         temp = model.fit(x_train, y_train).predict(x_test)
@@ -157,7 +158,8 @@ def model_predict(x_train, y_train, x_test, model_def, graph=False):
         model = GradientBoostingRegressor(**model_def.kwargs)
         temp = model.fit(x_train, y_train).predict(x_test)
         if graph:
-            graph_feature_importance(x_train, model)
+            pass
+            #graph_feature_importance(x_train, model)
     else:
         print('Unsupported Machine Learning Model')
         temp = pd.DataFrame([])

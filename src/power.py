@@ -68,6 +68,9 @@ class Power(SiteData):
         self.power_type = power_type
         self.stored_as = power_type[0:3]
         self.periods_per_day = (24 * 60) / int(self.power_type[0:2])
+        if self.config['prices']['use_prices'] == 'True':
+            self.sbsp = pd.read_csv(self.config['prices']['sbsp'], index_col='datetime', parse_dates=['datetime'])
+            self.epex = pd.read_csv(self.config['prices']['epex'], index_col='datetime', parse_dates=['datetime'])
 
     def load_metadata_db(self, site_list):
         """ Overrides function in superclass. 
