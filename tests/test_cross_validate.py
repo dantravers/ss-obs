@@ -57,6 +57,8 @@ def test_cross_validate():
     file_name = os.path.join(data_dir, "bench_stats1.csv" )
     bench_stats = pd.read_csv(file_name, index_col=[0])
     print("Testing stats:")
+    print(tstats)
+    print(bench_stats)
     pd.testing.assert_frame_equal(tstats, bench_stats)
 
 def test_add_lagged_features():

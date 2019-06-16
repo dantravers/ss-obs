@@ -37,7 +37,7 @@ def generate_error_stats(result, cap, epex=None, sbsp=None, splits=True):
         no_zeros_result = result.groupby(['month', 'hour']).filter(lambda x: x['outturn'].sum()>0)
         stat_temp = stat_temp.append(no_zeros_result.groupby(['month', 'hour']).\
                                  apply(stats, (cap, epex, sbsp)).reset_index(), ignore_index=True)
-    return(stat_temp[['month', 'hour', 'count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_hedge', 'hrly_cash', 'Rsqd']])
+    return(stat_temp[['month', 'hour', 'count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_val', 'Rsqd']])
 
 def stats(df, cap, epex, sbsp):
     """ Function to return statistics suite of errors of forecast-actual.
@@ -65,7 +65,15 @@ def stats(df, cap, epex, sbsp):
     # captures large errors: errors in 95% & 5% of the distribution of outturns.
     lg_over = df[df['diff'] > 1.65 * df.outturn.std()].shape[0] / df.shape[0] * 100 
     lg_under = df[df['diff'] < -1.65 * df.outturn.std()].shape[0] / df.shape[0] * 100 
-    # statistic on the price impact of forecast errors:
+    count=  df.count()['forecast'], 
+    MBE = df.mean()['diff'] / cap * 100, 
+    MAE = df.mean()['abs_diff'] / cap * 100, 
+    RMSE = (df.mean()['s_diff'] ** 0.5) / cap * 100, 
+    wMBE = np.average(df['diff'], weights=df['outturn']) / cap * 100, 
+    wMAE = np.average(df['abs_diff'], weights=df['outturn']) / cap * 100,
+    wRMSE = np.average(df['s_diff'], weights=df['outturn']) ** 0.5 / cap * 100,
+    Rsqd = (1 - (df.std()['diff'] / df.std()['outturn'])**2)
+    # statistic on the price impact of forecast errors - this does inner merge on df, so you lose some points - don't too before other stats!
     if (epex is not None) & (sbsp is not None):
         initial_len = len(df)
         df = pd.merge(df, epex, how='inner', left_index=True, right_index=True )
@@ -76,30 +84,27 @@ def stats(df, cap, epex, sbsp):
         df['cash_out'] = (df.outturn - df.forecast) * df.ssp / 1000
         df['value'] = df.hedge  + df.cash_out
         cash_loss_pct = df.sum()['cash_out'] / df['hedge'].sum() * 100
-        hrly_hedge_val = df.sum()['hedge'] / len(df)
-        hrly_cash_val = df.sum()['cash_out'] / len(df)
+        hrly_val = (df.sum()['hedge'] + df.sum()['cash_out']) / len(df)
     else:
         print('Required prices passed to x-validation, so not calculating price-based statistics.')# ** myprint, verbosity=3
         cash_loss_pct = np.nan
-        hrly_hedge_val = np.nan
-        hrly_cash_val = np.nan
+        hrly_val = np.nan
     # all other statistics
     return(pd.DataFrame( {
-                       'count': df.count()['forecast'], 
-                       'MBE': df.mean()['diff'] / cap * 100, 
-                       'MAE': df.mean()['abs_diff'] / cap * 100, 
-                       'RMSE': (df.mean()['s_diff'] ** 0.5) / cap * 100, 
+                       'count': count, 
+                       'MBE': MBE, 
+                       'MAE': MAE, 
+                       'RMSE': RMSE, 
                        'cash_pct' : np.around(cash_loss_pct, decimals=2), 
                        'lg_over' : np.around(lg_over, decimals=2),
                        'lg_under' : np.around(lg_under, decimals=2),
-                        'wMBE': np.average(df['diff'], weights=df['outturn']) / cap * 100, 
-                        'wMAE': np.average(df['abs_diff'], weights=df['outturn']) / cap * 100,
-                        'wRMSE': np.average(df['s_diff'], weights=df['outturn']) ** 0.5 / cap * 100,
-                        'hrly_hedge' : np.around(hrly_hedge_val, decimals=3), 
-                        'hrly_cash' : np.around(hrly_cash_val, decimals=3),
-                        'Rsqd': (1 - (df.std()['diff'] / df.std()['outturn'])**2)
+                        'wMBE': wMBE, 
+                        'wMAE': wMAE,
+                        'wRMSE': wRMSE,
+                        'hrly_val' : np.around(hrly_val, decimals=3), 
+                        'Rsqd': Rsqd
                       }, 
-                    columns = ['count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_hedge', 'hrly_cash', 'Rsqd'],
+                    columns = ['count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_val', 'Rsqd'],
                     index=[0]) )
 
 def heatmap_summary_stats(run_stats):
