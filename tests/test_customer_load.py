@@ -20,5 +20,5 @@ def test_customer_excel_load():
     load.load_from_excel(os.path.join(data_dir, filename))
     # test metadata is correct
     # test observation data is correct
-    bench = pd.read_csv(os.path.join(data_dir, 'bench_customer_load_obs.csv'), index_col=[0, 1], parse_dates=True).tz_localize('UTC', level=1)
+    bench = pd.read_csv(os.path.join(data_dir, 'bench_customer_load_obs.csv'), index_col=[0, 1], parse_dates=True)
     pd.testing.assert_frame_equal(load.obs, bench)
