@@ -8,6 +8,7 @@
 import pandas as pd
 import numpy as np
 import os
+import re
 import datetime
 import configparser
 from datetime import timedelta
@@ -325,7 +326,7 @@ class Load(Power):
         temp = pd.DataFrame(index=None)
         for c, d in zip(col, dtypes):
             temp[c] = pd.Series(dtype=d)
-        #read in raw data from file and then load to memory
+        #read in raw obs data from file and then load to memory
         try: 
             if l_file[-4:] == 'xlsx':
                 raw = pd.read_excel(l_file, sheet_name=0, usecols=list(range(0,50)))
@@ -335,7 +336,7 @@ class Load(Power):
                 raw.columns = raw.iloc[start_row]
                 raw = raw.iloc[start_row+1:, :]
             else:
-                'Load data file is not excel or csv (not supported).'
+                'Load data file is neither excel nor csv (other types not supported).'
         except KeyError:
             self.myprint('KeyError with loading file: {} - check file.'.format(l_file), 1)
         # remove rows of all NaN values, rename columns & convert dtypes
@@ -343,21 +344,49 @@ class Load(Power):
         raw.columns.name = 'hours'
         raw.dropna(how='all', inplace=True)
         raw.iloc[:, 2] = pd.to_numeric(raw.iloc[:, 2])
-        raw.date = pd.to_datetime(raw['date'])
-        # check for MPAN values being non-unique or having NaN values and fill if so.
-        if len(raw.site_id.unique()) > 1: 
-            if len(raw.site_id.dropna().unique()) > 1: 
-                self.myprint('Non unique MPAN values in file {}.'.format(l_file), 1)
-            else:
-                raw.loc[:, 'site_id'] = raw.site_id.dropna().unique()[0]
-        if raw[raw.isnull().any(axis=1)].shape[0]>0:
-            self.myprint('Load file {} includes null values in rows.  Possible cause is stray cells below the data table - please check'.format(l_file), 1)
+        raw['date'] = pd.to_datetime(raw['date'], dayfirst=True)
+        # Find MPAN from either the title or the file contents:
+        # find MPAN in file contents: 
+        is_contents_id = False
+        file_contents_id_list = [s for s in raw.site_id.dropna().unique() if str(s)[0].isdigit()]
+        if (len(file_contents_id_list) == 1):
+            if str(file_contents_id_list[0]).isdigit():
+                is_contents_id = True
+                file_contents_id = int(file_contents_id_list[0])
+        elif len(file_contents_id_list) == 0:
+            self.myprint('No MPAN in file {}, looking for one in title.'.format(l_file), 3)
         else:
-            temp = temp.append({ 'name' : os.path.basename(l_file).split('.')[0], 'kWp' : raw.set_index(['site_id', 'date']).max().max()}, ignore_index=True)
-            self._load_wide_data_to_obs(raw, raw.site_id.iloc[0], \
-                raw.date.min().date(), raw.date.max().date()+timedelta(1))
+            self.myprint('More than one MPAN string found in file contents for {}, looking for MPAN in title.'.format(l_file), 3)
+        # fine MPAN in file name (if there):
+        is_filename_id = False
+        filename_id = np.nan
+        filename_id_list = [int(s) for s in re.findall('\d+', l_file) if len(s)>6]
+        if len(filename_id_list)==1:
+            filename_id = int(filename_id_list[0])
+            is_filename_id = True
+        # decsion tree to assign site_id:
+        if (is_filename_id) & (is_contents_id==False):
+            load_site_id = filename_id
+        elif (is_contents_id==True) & (is_filename_id==False):
+            load_site_id = file_contents_id
+        elif is_contents_id & is_filename_id:
+            if filename_id == file_contents_id:
+                load_site_id = file_contents_id
+            else:
+                load_site_id = np.nan
+                self.myprint('MPAN identifier in filename and file contents do not match in {}.'.format(l_file), 1)
+        else:
+            load_site_id = np.nan
+            self.myprint('MPAN identifier not found in file or filename {}.'.format(l_file), 1)  
+        # update metadata
+        temp = temp.append({ 'name' : os.path.basename(l_file).split('.')[0], 'kWp' : raw.set_index(['site_id', 'date']).max().max()}, ignore_index=True)
         self.metadata = self.metadata.append(temp)
-
+        # update obs data
+        raw.loc[:, 'site_id'] = load_site_id
+        raw.iloc[:, 2:] = raw.iloc[:, 2:].astype(float) # convert readings to floats if not already
+        raw = raw[~raw['date'].isnull()] # removing rows with NaT in date field
+        self._load_wide_data_to_obs(raw, load_site_id, raw.date.min().date(), raw.date.max().date()+timedelta(1))
+        self.myprint('Loaded {} days of load data for {}, with {} half-hours missing.'.format(raw.shape[0], load_site_id, raw.iloc[:, 2:].isnull().sum().sum()), 2)
 
 def fillnans(x):
     if np.isnan(x[1]):

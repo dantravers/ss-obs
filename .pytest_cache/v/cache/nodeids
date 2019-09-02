@@ -6,6 +6,7 @@
   "tests/test_cross_validate.py::test_remove_features_parameter_empty_list",
   "tests/test_cross_validate.py::test_extra_terrestrial_irradiance",
   "tests/test_customer_load.py::test_customer_excel_load",
+  "tests/test_customer_load.py::test_customer_csv_load",
   "tests/test_load_obs_from_db.py::test_load_midas_obs_from_db",
   "tests/test_load_obs_from_db.py::test_load_pvstream_obs_from_db",
   "tests/test_load_obs_from_db.py::test_load_additional_midas_obs_from_db",
