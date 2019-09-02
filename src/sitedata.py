@@ -58,7 +58,7 @@ class SiteData:
 
         Parameters
         ----------
-        site_list : :obj:'list' of :obj:'int'
+        site_list : :obj:'list' or :obj:'int'
             List of the site_ids to be populated in the Power object
         start_date : date
             Start date from which to load in data.  Loads data including and above start date.  
@@ -84,7 +84,7 @@ class SiteData:
 
         Parameters
         ----------
-        site_list : :obj:'list' of int
+        site_list : :obj:'list' or int
             List of the src_ids to add to the metadata of object.
         goto_db : str
             Three-state parameter to indicate whether to go to the database to fetch data.
@@ -322,12 +322,22 @@ def check_missing_hours(df, start_date, end_date, type='-', id='Missing ID', per
     return
 
 def convert_load_col_names(col):
-    col_convert = { ' meter_mpan' : 'site_id', ' read_date' : 'date', 'MPAN' : 'site_id', 'Date' : 'date'}
+    col_convert = { ' meter_mpan' : 'site_id', \
+        'mpan' : 'site_id', \
+        ' read_date' : 'date', \
+        'date' : 'date', \
+        'settlementdate' : 'date'}
     if type(col)==datetime.time: 
         return('t' + str(int(col.hour*2 + col.minute/30 + 1)))
-    if col.strip()[0:3]=='hh0':
+    elif type(col) == np.float64:
+        return('t' + str('%.0f'%(col)))
+    elif col.strip()[0:3]=='hh0':
         return('t' + col.strip()[3:4])
-    if col.strip()[0:2]=='hh':
+    elif col.strip()[0:2]=='hh':
         return('t' + col.strip()[2:4])
     else:
-        return(col_convert[col])
+        try:
+            float(col)
+            return('t' + col)
+        except:
+            return(col_convert[col.lower()])

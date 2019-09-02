@@ -17,7 +17,6 @@ from location_data_utils import (cross_locations, get_fcst_locs,
                                  get_longest_ss_ids, read_netcdf_file)
 from model_definition import ModelDefinition
 
-
 def main():
     """ Function to output the average yield from list of ss_ids over a period of time.
     Arguments

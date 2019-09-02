@@ -235,6 +235,7 @@ class Power(SiteData):
     
     def _load_wide_data_to_obs(self, wide_data, site_id, start_date, end_date):
         pvflat = wide_data.set_index(['site_id', 'date'],drop=True).stack().reset_index()
+        pvflat = pvflat.rename(columns={'hours' : 'level_2'})    # to cater for values from csv loading of power load values
         pvflat['hh'] = pvflat.apply(lambda ser: float(ser['level_2'][1:]), axis=1)
         pvflat['mins'] = pvflat.hh * 30
         pvflat['datetime'] = pvflat.apply(lambda x: x['date'] + datetime.timedelta(minutes = x['mins']), axis=1)
@@ -251,7 +252,7 @@ class Power(SiteData):
         self.obs = self.obs[~self.obs.index.duplicated(keep='last')].sort_index()
 
 class Load(Power):
-    """ load modelling
+    """ Load modelling
     We want to store the predicted values in here for longer timeseries based on weather & model.
     So maybe we add another dimension to the dataframe.  Maybe add this to the column as "actual and modelled".
     May want to override the SiteData methods for finding obs data, as we probably always want to load the entire timeseries.
@@ -259,7 +260,7 @@ class Load(Power):
     ModelledLoad would be more similar to Power, and Modelled Load will have different date ranges.
     Or we inherit Load and it has an obs df AND a measured df.  Measured is loaded from excel, and obs modelled.
     We would need to override load_data from SiteData, but we could still call the parent method. 
-    The load from hdf is still useful.  But maybe it will be 
+    The load from hdf is still useful.  
     """
 
     def __init__(self, verbose=2, power_type='30min_load', local_config={}):
@@ -286,9 +287,9 @@ class Load(Power):
                 self.config[section].update(local_config[section])
         self.default_earliest_date = datetime.datetime.strptime(self.config['query_settings']['default_earliest_date'], '%Y-%m-%d').date()
 
-    def load_from_excel(self, filename='', filepath=''):
+    def load_from_file(self, filename='', filepath=''):
         """ 
-        Loads data from excel sheets.
+        Loads load data from excel sheets.
 
         Notes
         -----
@@ -326,19 +327,37 @@ class Load(Power):
             temp[c] = pd.Series(dtype=d)
         #read in raw data from file and then load to memory
         try: 
-            raw = pd.read_excel(l_file, sheet_name=0, usecols=49)
-            raw = raw.rename(convert_load_col_names, axis=1)
-            if raw[raw.isnull().any(axis=1)].shape[0]>0:
-                self.myprint('Load file {} includes null values in rows.  Likely cause is stray cells below the data table - please check'.format(l_file), 1)
-            elif raw.site_id.unique().shape[0] > 1: 
-                self.myprint('Load file {} includes more than one meter / identifier - not supported.'.format(l_file), 1)
+            if l_file[-4:] == 'xlsx':
+                raw = pd.read_excel(l_file, sheet_name=0, usecols=list(range(0,50)))
+            elif l_file[-4:] == '.csv':
+                raw = pd.read_csv(l_file, usecols=list(range(0,50)))
+                start_row = raw.index[raw.iloc[:,0].str.lower() == 'mpan'].tolist()[0]
+                raw.columns = raw.iloc[start_row]
+                raw = raw.iloc[start_row+1:, :]
             else:
-                temp.loc[raw.site_id[0], ['name', 'kWp']] = [os.path.basename(l_file).split('.')[0], raw.set_index(['site_id', 'date']).max().max()]
-                self._load_wide_data_to_obs(raw, raw.site_id.iloc[0], \
-                    raw.date.min().date(), raw.date.max().date()+timedelta(1))
-            self.metadata = self.metadata.append(temp)
+                'Load data file is not excel or csv (not supported).'
         except KeyError:
-            self.myprint('KeyError with loading excel: {} - check file.'.format(l_file), 1)
+            self.myprint('KeyError with loading file: {} - check file.'.format(l_file), 1)
+        # remove rows of all NaN values, rename columns & convert dtypes
+        raw = raw.rename(convert_load_col_names, axis=1)
+        raw.columns.name = 'hours'
+        raw.dropna(how='all', inplace=True)
+        raw.iloc[:, 2] = pd.to_numeric(raw.iloc[:, 2])
+        raw.date = pd.to_datetime(raw['date'])
+        # check for MPAN values being non-unique or having NaN values and fill if so.
+        if len(raw.site_id.unique()) > 1: 
+            if len(raw.site_id.dropna().unique()) > 1: 
+                self.myprint('Non unique MPAN values in file {}.'.format(l_file), 1)
+            else:
+                raw.loc[:, 'site_id'] = raw.site_id.dropna().unique()[0]
+        if raw[raw.isnull().any(axis=1)].shape[0]>0:
+            self.myprint('Load file {} includes null values in rows.  Possible cause is stray cells below the data table - please check'.format(l_file), 1)
+        else:
+            temp = temp.append({ 'name' : os.path.basename(l_file).split('.')[0], 'kWp' : raw.set_index(['site_id', 'date']).max().max()}, ignore_index=True)
+            self._load_wide_data_to_obs(raw, raw.site_id.iloc[0], \
+                raw.date.min().date(), raw.date.max().date()+timedelta(1))
+        self.metadata = self.metadata.append(temp)
+
 
 def fillnans(x):
     if np.isnan(x[1]):
