@@ -15,6 +15,7 @@ from datetime import timedelta
 from dbconnector import DBConnector
 import sys
 from sitedata import SiteData, check_missing_hours, convert_load_col_names
+from location_data_utils import populate_generic_dno_licence_region_locations
 
 class Power(SiteData):
     """ Stores power readings from ss_id database.
@@ -387,6 +388,13 @@ class Load(Power):
         raw = raw[~raw['date'].isnull()] # removing rows with NaT in date field
         self._load_wide_data_to_obs(raw, load_site_id, raw.date.min().date(), raw.date.max().date()+timedelta(1))
         self.myprint('Loaded {} days of load data for {}, with {} half-hours missing.'.format(raw.shape[0], load_site_id, raw.iloc[:, 2:].isnull().sum().sum()), 2)
+
+    def update_dno_locations(self, force_overwrite=False):
+        if force_overwrite == True:
+            self.metadata = populate_generic_dno_licence_region_locations(self.metadata)
+        else: 
+            self.metadata.loc[self.metadata[['latitude', 'longitude']].isna().any(axis=1), :] = \
+                populate_generic_dno_licence_region_locations(self.metadata.loc[self.metadata[['latitude', 'longitude']].isna().any(axis=1), :].copy())
 
 def fillnans(x):
     if np.isnan(x[1]):

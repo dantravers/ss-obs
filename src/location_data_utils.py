@@ -6,6 +6,7 @@ import datetime
 import pandas as pd
 import power as pw
 import xarray as xr
+import json
 from ss_utilities.generic_tools import haversine_np
 
 def get_fcst_locs(site_list, filename='C:\\Users\\Dan Travers\\Documents\\dbs\\weather\\ecmwf\\ecmwf2016-01-02T00%3A00%3A00.nc', n=1):
@@ -120,8 +121,15 @@ def read_netcdf_file(filename, filepath, locations):
     out_frame.index.rename('datetime', 2, inplace=True)
     return(out_frame)
 
+def populate_generic_dno_licence_region_locations(meta_df):
+    with open(os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config') , 'dno_latlon.json'), 'r') as jf:
+        dno_latlon = json.load(jf)
+    meta_df.loc[:, 'latitude'] = meta_df.name.map(lambda x: dno_latlon[x[0:2]][0])
+    meta_df.loc[:, 'longitude'] = meta_df.name.map(lambda x: dno_latlon[x[0:2]][1])
+    return(meta_df)
+
 def get_longest_ss_ids(n=3):
-    """ Function used for test runs, so production quality or tested as such.
+    """ Function used for test runs, so not production quality or tested as such.
     Finds the n sites with the maximum number of days between the highest and lowest dates
     from the default Power hdf store.  
     """
