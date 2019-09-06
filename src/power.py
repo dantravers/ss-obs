@@ -289,7 +289,7 @@ class Load(Power):
                 self.config[section].update(local_config[section])
         self.default_earliest_date = datetime.datetime.strptime(self.config['query_settings']['default_earliest_date'], '%Y-%m-%d').date()
 
-    def load_from_file(self, filename='', filepath=''):
+    def load_from_file(self, filename='', filepath='', customer=''):
         """ 
         Loads load data from excel sheets.
 
@@ -306,6 +306,8 @@ class Load(Power):
         filepath : str
             Path where the file is located.  Default file path is specified in config settings: 
             query_settings>file_path.
+        customer : str
+            The customer name (optional) that the sites belong to.
         """
         if filepath == '':
             filepath = self.config['query_settings']['file_path']
@@ -316,9 +318,20 @@ class Load(Power):
         else:
             self.myprint("Loading load file: {}.".format(filename), 2)
             self.__load_file(os.path.join(filepath, filename))
+        self.metadata.loc[:, 'customer'] = customer
 
     def __load_file(self, l_file):
-        """ load individual file and append to self.obs
+        """ load individual file and append to self.obs and self.metadata.
+
+        Notes
+        -----
+        self.obs is relatively self-explanatory and unchanged from the parent class.
+        metadata is updated with: 
+        site_id (index) is established using a MPAN identifier from either the file name or the file contents.
+        name is the file-name without the file type suffix.
+        customer is a user defined field to the function to identify the customer (if relevant).
+        latitude and longitude are left blank, but can be populated based on licence area by method "update_dno_locations". 
+        kWp equal to the maximum recorded outturn.
         """
         #create empty metadata df with correct data types
         dtypes = [ str, str, np.float64, np.float64, np.float64]
@@ -328,7 +341,7 @@ class Load(Power):
         for c, d in zip(col, dtypes):
             temp[c] = pd.Series(dtype=d)
         #read in raw obs data from file and then load to memory
-        try: 
+        try:
             if l_file[-4:] == 'xlsx':
                 raw = pd.read_excel(l_file, sheet_name=0, usecols=list(range(0,50)))
             elif l_file[-4:] == '.csv':
@@ -341,53 +354,60 @@ class Load(Power):
         except KeyError:
             self.myprint('KeyError with loading file: {} - check file.'.format(l_file), 1)
         # remove rows of all NaN values, rename columns & convert dtypes
-        raw = raw.rename(convert_load_col_names, axis=1)
-        raw.columns.name = 'hours'
-        raw.dropna(how='all', inplace=True)
-        raw.iloc[:, 2] = pd.to_numeric(raw.iloc[:, 2])
-        raw['date'] = pd.to_datetime(raw['date'], dayfirst=True)
-        # Find MPAN from either the title or the file contents:
-        # find MPAN in file contents: 
-        is_contents_id = False
-        file_contents_id_list = [s for s in raw.site_id.dropna().unique() if str(s)[0].isdigit()]
-        if (len(file_contents_id_list) == 1):
-            if str(file_contents_id_list[0]).isdigit():
-                is_contents_id = True
-                file_contents_id = int(file_contents_id_list[0])
-        elif len(file_contents_id_list) == 0:
-            self.myprint('No MPAN in file {}, looking for one in title.'.format(l_file), 3)
+        try: 
+            raw
+        except NameError:
+            self.myprint('Error: File {} cannot be opened, could be locked or corrupted?'.format(l_file), 1)
         else:
-            self.myprint('More than one MPAN string found in file contents for {}, looking for MPAN in title.'.format(l_file), 3)
-        # fine MPAN in file name (if there):
-        is_filename_id = False
-        filename_id = np.nan
-        filename_id_list = [int(s) for s in re.findall('\d+', l_file) if len(s)>6]
-        if len(filename_id_list)==1:
-            filename_id = int(filename_id_list[0])
-            is_filename_id = True
-        # decsion tree to assign site_id:
-        if (is_filename_id) & (is_contents_id==False):
-            load_site_id = filename_id
-        elif (is_contents_id==True) & (is_filename_id==False):
-            load_site_id = file_contents_id
-        elif is_contents_id & is_filename_id:
-            if filename_id == file_contents_id:
+            raw = raw.rename(convert_load_col_names, axis=1)
+            raw.columns.name = 'hours'
+            raw.dropna(how='all', inplace=True)
+            raw.iloc[:, 2] = pd.to_numeric(raw.iloc[:, 2])
+            raw['date'] = pd.to_datetime(raw['date'], dayfirst=True)
+            # Find MPAN from either the title or the file contents:
+            # find MPAN in file contents: 
+            is_contents_id = False
+            file_contents_id_list = [s for s in raw.site_id.dropna().unique() if str(s)[0].isdigit()]
+            if (len(file_contents_id_list) == 1):
+                if str(file_contents_id_list[0]).isdigit():
+                    is_contents_id = True
+                    file_contents_id = int(file_contents_id_list[0])
+            elif len(file_contents_id_list) == 0:
+                self.myprint('No MPAN in file {}, looking for one in title.'.format(l_file), 3)
+            else:
+                self.myprint('More than one MPAN string found in file contents for {}, looking for MPAN in title.'.format(l_file), 3)
+            # fine MPAN in file name (if there):
+            is_filename_id = False
+            filename_id = np.nan
+            filename_id_list = [int(s) for s in re.findall('\d+', l_file) if len(s)>6]
+            if len(filename_id_list)==1:
+                filename_id = int(filename_id_list[0])
+                is_filename_id = True
+            # decsion tree to assign site_id:
+            if (is_filename_id) & (is_contents_id==False):
+                load_site_id = filename_id
+            elif (is_contents_id==True) & (is_filename_id==False):
                 load_site_id = file_contents_id
+            elif is_contents_id & is_filename_id:
+                if filename_id == file_contents_id:
+                    load_site_id = file_contents_id
+                else:
+                    load_site_id = np.nan
+                    self.myprint('MPAN identifier in filename and file contents do not match in {}.'.format(l_file), 1)
             else:
                 load_site_id = np.nan
-                self.myprint('MPAN identifier in filename and file contents do not match in {}.'.format(l_file), 1)
-        else:
-            load_site_id = np.nan
-            self.myprint('MPAN identifier not found in file or filename {}.'.format(l_file), 1)  
-        # update metadata
-        temp = temp.append({ 'name' : os.path.basename(l_file).split('.')[0], 'kWp' : raw.set_index(['site_id', 'date']).max().max()}, ignore_index=True)
+                self.myprint('MPAN identifier not found in file or filename {}.'.format(l_file), 1)  
+            # update obs data
+            raw.loc[:, 'site_id'] = load_site_id
+            raw.iloc[:, 2:] = raw.iloc[:, 2:].astype(float) # convert readings to floats if not already
+            raw = raw[~raw['date'].isnull()] # removing rows with NaT in date field
+            self._load_wide_data_to_obs(raw, load_site_id, raw.date.min().date(), raw.date.max().date()+timedelta(1))
+            # update metadata
+            temp = temp.append({ 'name' : os.path.basename(l_file).split('.')[0], 'kWp' : raw.set_index(['site_id', 'date']).max().max()}, ignore_index=True)
+            temp.loc[:, 'site_id'] = load_site_id
+            temp.set_index(['site_id'], drop=True, inplace=True)
+            self.myprint('Loaded {} days of load data for {}, with {} half-hours missing.'.format(raw.shape[0], load_site_id, raw.iloc[:, 2:].isnull().sum().sum()), 2)
         self.metadata = self.metadata.append(temp)
-        # update obs data
-        raw.loc[:, 'site_id'] = load_site_id
-        raw.iloc[:, 2:] = raw.iloc[:, 2:].astype(float) # convert readings to floats if not already
-        raw = raw[~raw['date'].isnull()] # removing rows with NaT in date field
-        self._load_wide_data_to_obs(raw, load_site_id, raw.date.min().date(), raw.date.max().date()+timedelta(1))
-        self.myprint('Loaded {} days of load data for {}, with {} half-hours missing.'.format(raw.shape[0], load_site_id, raw.iloc[:, 2:].isnull().sum().sum()), 2)
 
     def update_dno_locations(self, force_overwrite=False):
         if force_overwrite == True:

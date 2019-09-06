@@ -122,10 +122,12 @@ def read_netcdf_file(filename, filepath, locations):
     return(out_frame)
 
 def populate_generic_dno_licence_region_locations(meta_df):
+    meta_df.reset_index(inplace=True)
     with open(os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config') , 'dno_latlon.json'), 'r') as jf:
         dno_latlon = json.load(jf)
-    meta_df.loc[:, 'latitude'] = meta_df.name.map(lambda x: dno_latlon[x[0:2]][0])
-    meta_df.loc[:, 'longitude'] = meta_df.name.map(lambda x: dno_latlon[x[0:2]][1])
+    meta_df.loc[:, 'latitude'] = meta_df.site_id.map(lambda x: dno_latlon[str(x)[0:2]][0])
+    meta_df.loc[:, 'longitude'] = meta_df.site_id.map(lambda x: dno_latlon[str(x)[0:2]][1])
+    meta_df.set_index(['site_id'], drop=True, inplace=True)
     return(meta_df)
 
 def get_longest_ss_ids(n=3):
