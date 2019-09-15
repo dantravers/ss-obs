@@ -20,7 +20,7 @@ def generate_error_stats(result, cap, epex=None, sbsp=None, splits=True):
     epex : DataFrame
         Dataframe indexed by datetime containing the epex prices under column label "price".  
         This is the day ahead epex hourly auction settlement prices.  This is used to calculate the price power is hedged at 
-        if we assume day ahead hedging (very simplified).
+        if we assume day ahead hedging.
     sbsp : DataFrame
         DataFrame indexed by datetime containing the balancing market system buy-sell prices under columns "ssp", "sbp".
         We use just "ssp" in calculations to calculate cash-out prices for being in imbalance.
@@ -73,13 +73,14 @@ def stats(df, cap, epex, sbsp):
     wMAE = np.average(df['abs_diff'], weights=df['outturn']) / cap * 100,
     wRMSE = np.average(df['s_diff'], weights=df['outturn']) ** 0.5 / cap * 100,
     Rsqd = (1 - (df.std()['diff'] / df.std()['outturn'])**2)
-    # statistic on the price impact of forecast errors - this does inner merge on df, so you lose some points - don't too before other stats!
+    # statistic on the price impact of forecast errors - this does inner merge on df, so you lose some points -->
+    # don't do before other stats!
     if (epex is not None) & (sbsp is not None):
         initial_len = len(df)
-        df = pd.merge(df, epex, how='inner', left_index=True, right_index=True )
+        df = pd.merge(df, epex, how='inner', left_index=True, right_index=True)
         df = pd.merge(df, sbsp, how='inner', left_index=True, right_index=True)
         if len(df) < initial_len/2:
-            print('Prices present for less than half the forecasted points.  Still calcualting statistics.') # ** shoudl be myprint, verbosity=2
+            print('Prices present for less than half the forecasted points.  Still calcualting statistics.') # ** should be myprint, verbosity=2
         df['hedge'] = df.forecast * df.price / 1000
         df['cash_out'] = (df.outturn - df.forecast) * df.ssp / 1000
         df['value'] = df.hedge  + df.cash_out
