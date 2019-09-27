@@ -22,8 +22,8 @@ def main():
     Arguments
     ---------
     arg1 : name of the input.list file - should be a list with ss_ids to query.
-    art2 : name of output file to write results to.
-    """
+    arg2 : name of output file to write results to.
+    """ 
 
     # input ss_ids.list and output files
     if len(sys.argv) > 2:
