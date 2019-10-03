@@ -39,7 +39,7 @@ def generate_error_stats(result, cap, epex=None, sbsp=None, splits=True):
                                  apply(stats, (cap, epex, sbsp)).reset_index(), ignore_index=True)
     return(stat_temp[['month', 'hour', 'count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_val', 'Rsqd']])
 
-def stats(df, cap, epex, sbsp):
+def stats(df, cap, epex=None, sbsp=None):
     """ Function to return statistics suite of errors of forecast-actual.
     All statistics are normalized by capacity.
 
@@ -84,7 +84,7 @@ def stats(df, cap, epex, sbsp):
         df['hedge'] = df.forecast * df.price / 1000
         df['cash_out'] = (df.outturn - df.forecast) * df.ssp / 1000
         df['value'] = df.hedge  + df.cash_out
-        cash_loss_pct = df.sum()['cash_out'] / df['hedge'].sum() * 100
+        cash_loss_pct = df.sum()['cash_out'] / df['hedge'].sum() * 100 #sign -ve for losses in generation, +ve for losses in load.
         hrly_val = (df.sum()['hedge'] + df.sum()['cash_out']) / len(df)
     else:
         print('Required prices passed to x-validation, so not calculating price-based statistics.')# ** myprint, verbosity=3

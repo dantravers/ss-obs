@@ -71,8 +71,8 @@ class Power(SiteData):
         self.stored_as = power_type[0:3]
         self.periods_per_day = (24 * 60) / int(self.power_type[0:2])
         if self.config['prices']['use_prices'] == 'True':
-            self.sbsp = pd.read_csv(self.config['prices']['sbsp'], index_col='datetime', parse_dates=['datetime'])
-            self.epex = pd.read_csv(self.config['prices']['epex'], index_col='datetime', parse_dates=['datetime'])
+            self.sbsp = pd.read_csv(self.config['prices']['sbsp'], index_col='datetime', parse_dates=['datetime'], dayfirst=True)
+            self.epex = pd.read_csv(self.config['prices']['epex'], index_col='datetime', parse_dates=['datetime'], dayfirst=True)
 
     def load_metadata_db(self, site_list):
         """ Overrides function in superclass. 
@@ -255,14 +255,9 @@ class Power(SiteData):
 
 class Load(Power):
     """ Load modelling
-    We want to store the predicted values in here for longer timeseries based on weather & model.
-    So maybe we add another dimension to the dataframe.  Maybe add this to the column as "actual and modelled".
-    May want to override the SiteData methods for finding obs data, as we probably always want to load the entire timeseries.
-    Or maybe better to save the forecasted values to another child class of Power (ModelledLoad).  
-    ModelledLoad would be more similar to Power, and Modelled Load will have different date ranges.
-    Or we inherit Load and it has an obs df AND a measured df.  Measured is loaded from excel, and obs modelled.
-    We would need to override load_data from SiteData, but we could still call the parent method. 
-    The load from hdf is still useful.  
+    Stores actual load profiles - loaded from file.  
+    
+    Load profiles can be saved as hdf with a customer name.  
     """
 
     def __init__(self, verbose=2, power_type='30min_load', local_config={}):
@@ -403,8 +398,8 @@ class Load(Power):
             raw = raw[~raw['date'].isnull()] # removing rows with NaT in date field
             self._load_wide_data_to_obs(raw, load_site_id, raw.date.min().date(), raw.date.max().date()+timedelta(1))
             # update metadata
-            temp = temp.append({ 'name' : os.path.basename(l_file).split('.')[0], 'kWp' : raw.set_index(['site_id', 'date']).max().max()}, ignore_index=True)
-            temp.loc[:, 'site_id'] = load_site_id
+            temp = temp.append({ 'site_id' : load_site_id, 'name' : os.path.basename(l_file).split('.')[0], 'kWp' : raw.set_index(['site_id', 'date']).max().max()}, ignore_index=True)
+            temp['site_id'] = temp['site_id'].astype('int64')
             temp.set_index(['site_id'], drop=True, inplace=True)
             self.myprint('Loaded {} days of load data for {}, with {} half-hours missing.'.format(raw.shape[0], load_site_id, raw.iloc[:, 2:].isnull().sum().sum()), 2)
         self.metadata = self.metadata.append(temp)

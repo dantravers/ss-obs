@@ -7,6 +7,7 @@ import pandas as pd
 import power as pw
 import xarray as xr
 import json
+import holidays
 from ss_utilities.generic_tools import haversine_np
 
 def get_fcst_locs(site_list, filename='C:\\Users\\Dan Travers\\Documents\\dbs\\weather\\ecmwf\\ecmwf2016-01-02T00%3A00%3A00.nc', n=1):
@@ -62,7 +63,7 @@ def cross_locations(primary, secondary, n=4):
 
 def read_netcdf_file(filename, filepath, locations):
     """ Read the netCDF file provided and return the weather variables on the locations requested.
-    
+
     Notes
     -----
     Returns a dataframe indexed on latitude, longitude, (forecast) time, base time (unique entry), weather variable.  
@@ -143,3 +144,11 @@ def get_longest_ss_ids(n=3):
     ss_selected = ss_list.sort_values('diff', ascending=False).head(n).index.get_values()
     power.load_metadata(ss_selected)
     return(power.metadata.loc[ss_selected])
+
+def apply_weekday(df, type='grouped'):
+    uk_hols = holidays.England()
+    df = df.assign(weekday=df.index.shift(-1, freq='h').weekday)
+    df.loc[df.index.map(lambda x: (x + datetime.timedelta(hours=-1)).date() in uk_hols), 'weekday'] = 6
+    if type == 'grouped': 
+        df.loc[df.weekday < 5, 'weekday'] = 0
+    return(df)

@@ -75,7 +75,9 @@ class SiteData:
         if not isinstance(start_date, datetime.date) or not isinstance(end_date, datetime.date):
             raise TypeError("start_date and end_date must be of type datetime.date.")
         self.load_metadata(site_list, goto_db)
+        self.metadata.index.name = 'site_id'
         self.load_observations(site_list, start_date, end_date, goto_db)
+        self.obs.index.name = 'site_id'
 
     def load_metadata(self, site_list, goto_db=''):
         """ Method to populate or append to the metadata object from a list of site_ids.

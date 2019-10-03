@@ -17,6 +17,7 @@ from pvlib.irradiance import get_extra_radiation
 from model_definition import ModelDefinition
 from pv_ml_models import cross_validate_grouped, coef_lr_grouped
 from stats_funcs import generate_error_stats, scatter_results
+from location_data_utils import apply_weekday
 
 class ModelRun:
     """ 
@@ -68,7 +69,7 @@ class ModelRun:
         If a list of length 2, these are the integer numbers for the first and last hours included in analysis.  
         To include all hours, enter a list of length 2 with entries [0, 25]
         If blank, hours are restricted to 0800 to 1600 UTC.  
-        If a list of length 1, this is the number of degrees of solar angle above horizon to start counting from.
+        If a list of length 1, this is the number of degrees of solar angle above horizon to start counting from (not currently implemented).
     clean_sigma : int
         Number of standard deviations of the outturn away from the mean for that month-hour to remove.
         Always remove zero outturn values.
@@ -260,11 +261,15 @@ class ModelRun:
 
         if len(self.solar_geometry) == 0:
             self.features = self.features.assign(hour=self.features.index.hour)
-            self.features = self.features.assign(month=self.features.index.month)
+            self.features = self.features.assign(month=self.features.index.shift(-1, freq='h').month)
         if 'month' in self.solar_geometry:
-            self.features = self.features.assign(month=self.features.index.month)
+            self.features = self.features.assign(month=self.features.index.shift(-1, freq='h').month)
         if 'hour' in self.solar_geometry:
             self.features = self.features.assign(hour=self.features.index.hour)
+        if 'weekday_grouped' in self.solar_geometry:
+            self.features = apply_weekday(self.features, 'grouped')
+        if 'weekday_individual' in self.solar_geometry:
+            self.features = apply_weekday(self.features, 'individual')
         if 'extra' in self.solar_geometry:
             self.features['e_irr'] = get_extra_radiation(self.features.index) * \
                 np.sin(np.radians(get_solarposition(self.features.index, self.lat, self.lon).apparent_elevation))\

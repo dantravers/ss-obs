@@ -12,6 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, cross_val_score, KFold, LeaveOneOut
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
+from location_data_utils import apply_weekday
 #import matplotlib.pyplot as plt
 
 def coef_lr(X, y):
@@ -71,7 +72,7 @@ def cross_validate(X, y, model_def):
         max_rows = X.shape[0] if model_def.max_runs == 0 else n_folds * model_def.max_rows_in_fold
         raw_predict = pd.DataFrame([])
         kf = KFold(n_splits=n_folds, shuffle=model_def.shuffle, random_state=0)
-        #loop through cross-validation folds, testing each fold and gathering data
+        #loop through cross-validation folds, training & predicting each fold and gathering data
         for train_i, test_i in kf.split(X.iloc[:max_rows,]):
             predict = model_predict(X.iloc[train_i], y.iloc[train_i], X.iloc[test_i], model_def)
             temp = pd.DataFrame({'month': X.iloc[test_i].index.month, 
@@ -112,9 +113,13 @@ def cross_validate_grouped(X, y, model_def):
             X = X.assign(hour=X.index.hour)
         if 'month' in model_def.grouped_by:
             X = X.assign(month=X.index.month)
+        if 'weekday' in model_def.grouped_by:
+            X = apply_weekday(X, 'grouped') # assuming only using the grouped dotw for simplicity
+        #if '_individual' in model_def.grouped_by:
+        #    X = apply_weekday(X, 'individual')
         grouped = X.groupby(model_def.grouped_by)
         group_predict = pd.DataFrame([])
-        for table, groupg in grouped:
+        for _, groupg in grouped:
             yg = y.loc[groupg.index]
             group_predict = group_predict.append(cross_validate(groupg, yg, model_def))
     else: 
@@ -160,6 +165,8 @@ def model_predict(x_train, y_train, x_test, model_def, graph=False):
         if graph:
             pass
             #graph_feature_importance(x_train, model)
+    elif model_def.ml_model == 'average':
+        temp = np.ones((x_test.shape[0], )) * y_train.mean()
     else:
         print('Unsupported Machine Learning Model')
         temp = pd.DataFrame([])
