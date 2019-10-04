@@ -40,6 +40,7 @@ def test_cross_validate():
                       model, 
                       start, end, 
                       forecast_hours_ahead=0, 
+                      feature_list=['irr', 'wind_dir', 'wind_speed', 'air_temp', 'rltv_hum'],
                       sigma_clean=5, 
                         verbose=2)
         run1.cross_validate(False)
@@ -70,6 +71,7 @@ def test_add_lagged_features():
                   lr, 
                   start, end, 
                   forecast_hours_ahead=0, 
+                  feature_list=['irr', 'wind_dir', 'wind_speed', 'air_temp', 'rltv_hum'],
                   lagged_variables=lag1, 
                   sigma_clean=5, 
                     verbose=2)
@@ -91,6 +93,7 @@ def test_add_rolling_features():
                   lr, 
                   start, end, 
                   forecast_hours_ahead=0, 
+                  feature_list=['irr', 'wind_dir', 'wind_speed', 'air_temp', 'rltv_hum'],
                   lagged_variables=rolling, 
                   sigma_clean=5, 
                     verbose=2)
@@ -119,7 +122,6 @@ def test_remove_features():
     pd.testing.assert_frame_equal(run1.features, bench_results)
 
 def test_remove_features_parameter_empty_list():
-    feat = []
     file_name = os.path.join(data_dir, "bench_no_features_removed.csv" )
     bench_results = pd.read_csv(file_name, index_col=0, parse_dates=True)
     # initialize ModelRun, which creates features
@@ -129,7 +131,7 @@ def test_remove_features_parameter_empty_list():
                   lr, 
                   start, end, 
                   forecast_hours_ahead=0, 
-                  feature_list = feat,  
+                  feature_list=['irr', 'wind_dir', 'wind_speed', 'air_temp', 'rltv_hum'],
                   sigma_clean=5, 
                   verbose=2)
     # test the results are equal by looking at feature df:
@@ -147,6 +149,7 @@ def test_extra_terrestrial_irradiance():
                   start, end, 
                   forecast_hours_ahead=0, 
                   solar_geometry=['month', 'extra'],
+                  feature_list=['irr', 'wind_dir', 'wind_speed', 'air_temp', 'rltv_hum'],
                   sigma_clean=5, 
                   verbose=2)
     # test the results are equal by looking at feature df:

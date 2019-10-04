@@ -59,12 +59,12 @@ class ModelRun:
         If '', just use the month-hour features.
     feature_list : obj:'list' of str
         List of strings to use as features.  This must be a subset of the complete set of features. 
-        If the parameters is an empty list, then all features are utilized.
-        If the parameter is non-empty list, the weather features not in the list are removed.
-        Note that if lagged features are requested, they are still created but the original feature may be removed.
+        The full set of weather features is: ['irr', 'wind_dir', 'wind_speed', 'air_temp', 'rltv_hum'].
+        Note that when lagged or rolling average features are requested, the original feature may still be removed.
     lagged_variables : Dictionary
         Dictionary of features and list of lags for each feature. 
         These lags (can be forwards or backwards) are added to the feature set.
+        Positive lags means the variable from the hour *before* is used.
     daylight_hours : obj:'list' of int
         If a list of length 2, these are the integer numbers for the first and last hours included in analysis.  
         To include all hours, enter a list of length 2 with entries [0, 25]
@@ -227,10 +227,7 @@ class ModelRun:
             loc[(self.start_date-timedelta(5)).strftime('%Y%m%d'): (self.end_date+timedelta(5)).strftime('%Y%m%d')]\
                 .set_index('site_id', append=True).swaplevel()
         # find columns to drop first, then add lagged features, then drop columns:
-        if len(self.feature_list) > 0: 
-            features_to_drop = [ x for x in self.features.columns.values if x not in self.feature_list]
-        else:
-            features_to_drop = []
+        features_to_drop = [ x for x in self.features.columns.values if x not in self.feature_list]
         self.__add_lagged_data()
         self.features = self.features.drop(features_to_drop, axis=1)
         # create wide format indexed by datetime only, so it can be indexed commonly to the target
