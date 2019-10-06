@@ -148,6 +148,10 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
             temp['lags'] = entry[0:1]+'-'+feature[0:3]+'-'+str(lags[entry][feature])
     temp['w_id'] = w_id
     temp['ss_id'] = ss_id
-    temp['days_ahead'] = forecast_days_ahead
+    grpd = ''
+    for word in model.grouped_by:
+        grpd += word[0:1]
+    temp['grouped'] = grpd
+    #temp['days_ahead'] = forecast_days_ahead
     temp['run'] = timestamp
     return(temp, pd.concat([run1.results_], keys=[timestamp], names=['run'])[['forecast', 'outturn']])

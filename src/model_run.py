@@ -261,8 +261,18 @@ class ModelRun:
             self.features = self.features.assign(month=self.features.index.shift(-1, freq='h').month)
         if 'month' in self.solar_geometry:
             self.features = self.features.assign(month=self.features.index.shift(-1, freq='h').month)
+        if 'dayofyear' in self.solar_geometry: # this outperforms the month feature often and can replace it 
+            self.features = self.features.assign(dayofyear=self.features.index.dayofyear+10)
+            self.features['dayofyear_sin'] = self.features.dayofyear.apply(lambda x: np.sin(np.pi*2* (x)/ 365))
+            self.features['dayofyear_cos'] = self.features.dayofyear.apply(lambda x: np.cos(np.pi*2* (x)/ 365))
+            self.features.drop('dayofyear', axis=1)
         if 'hour' in self.solar_geometry:
             self.features = self.features.assign(hour=self.features.index.hour)
+        if 'hour_circular' in self.solar_geometry:
+            self.features = self.features.assign(hour=self.features.index.hour)            
+            self.features['hour_sin'] = self.features.hour.apply(lambda x: np.sin(np.pi*2* (x)/ 365))
+            self.features['hour_cos'] = self.features.hour.apply(lambda x: np.cos(np.pi*2* (x)/ 365))
+            self.features.drop('hour', axis=1)
         if 'weekday_grouped' in self.solar_geometry:
             self.features = apply_weekday(self.features, 'grouped')
         if 'weekday_individual' in self.solar_geometry:

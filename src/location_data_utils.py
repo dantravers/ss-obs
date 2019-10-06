@@ -146,9 +146,15 @@ def get_longest_ss_ids(n=3):
     return(power.metadata.loc[ss_selected])
 
 def apply_weekday(df, type='grouped'):
+    """ Returns dataframe with dummy columns for the weekdays requested.
+    'grouped' groups all working days as 0, and Sundays and English holidays together.
+    'individual' returns each daytype separately, and holidays as a Sunday daytype (=6).
+    """
     uk_hols = holidays.England()
     df = df.assign(weekday=df.index.shift(-1, freq='h').weekday)
     df.loc[df.index.map(lambda x: (x + datetime.timedelta(hours=-1)).date() in uk_hols), 'weekday'] = 6
     if type == 'grouped': 
         df.loc[df.weekday < 5, 'weekday'] = 0
+    df = pd.concat([df, pd.get_dummies(df.weekday)], axis=1)
+    df.columns = df.columns.astype(str)
     return(df)
