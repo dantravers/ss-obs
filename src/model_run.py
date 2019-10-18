@@ -265,7 +265,7 @@ class ModelRun:
             self.features = self.features.assign(dayofyear=self.features.index.dayofyear+10)
             self.features['dayofyear_sin'] = self.features.dayofyear.apply(lambda x: np.sin(np.pi*2* (x)/ 365))
             self.features['dayofyear_cos'] = self.features.dayofyear.apply(lambda x: np.cos(np.pi*2* (x)/ 365))
-            self.features.drop('dayofyear', axis=1)
+            #self.features.drop('dayofyear', axis=1, inplace=True) # commented out, as found that leaving this in added ~2% of accuracy.
         if 'hour' in self.solar_geometry:
             self.features = self.features.assign(hour=self.features.index.hour)
         if 'hour_circular' in self.solar_geometry:
@@ -277,6 +277,10 @@ class ModelRun:
             self.features = apply_weekday(self.features, 'grouped')
         if 'weekday_individual' in self.solar_geometry:
             self.features = apply_weekday(self.features, 'individual')
+        if 'weekday_holiday_individual' in self.solar_geometry:
+            self.features = apply_weekday(self.features, 'week_holiday_individual')
+        if 'holiday_individual' in self.solar_geometry:
+            self.features = apply_weekday(self.features, 'holiday_individual')
         if 'extra' in self.solar_geometry:
             self.features['e_irr'] = get_extra_radiation(self.features.index) * \
                 np.sin(np.radians(get_solarposition(self.features.index, self.lat, self.lon).apparent_elevation))\

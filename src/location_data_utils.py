@@ -145,16 +145,24 @@ def get_longest_ss_ids(n=3):
     power.load_metadata(ss_selected)
     return(power.metadata.loc[ss_selected])
 
-def apply_weekday(df, type='grouped'):
+def apply_weekday(df, type='grouped', dummies=True):
     """ Returns dataframe with dummy columns for the weekdays requested.
     'grouped' groups all working days as 0, and Sundays and English holidays together.
     'individual' returns each daytype separately, and holidays as a Sunday daytype (=6).
+    'holiday_individual' returns all working day as 0, and holidays separate from Sundays.
+    'week_holiday_individual' returns each daytype separately and holidays separately (=7).
     """
     uk_hols = holidays.England()
     df = df.assign(weekday=df.index.shift(-1, freq='h').weekday)
-    df.loc[df.index.map(lambda x: (x + datetime.timedelta(hours=-1)).date() in uk_hols), 'weekday'] = 6
-    if type == 'grouped': 
+    if (type=='week_holiday_individual') or (type=='holiday_individual'):
+        holiday_day = 7
+    else:
+        holiday_day = 6
+    df.loc[df.index.map(lambda x: (x + datetime.timedelta(hours=-1)).date() in uk_hols), 'weekday'] = holiday_day
+    if (type == 'grouped') or (type == 'holiday_individual'):
         df.loc[df.weekday < 5, 'weekday'] = 0
-    df = pd.concat([df, pd.get_dummies(df.weekday)], axis=1)
+    if dummies==True:
+        df  = pd.concat([df, pd.get_dummies(df.weekday)], axis=1)
+        df.drop('weekday', axis=1, inplace=True)
     df.columns = df.columns.astype(str)
     return(df)

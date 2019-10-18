@@ -6,6 +6,7 @@
 
 import pandas as pd
 import numpy as np
+import xgboost as xgb
 from sklearn.linear_model import LinearRegression 
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
@@ -113,10 +114,19 @@ def cross_validate_grouped(X, y, model_def):
             X = X.assign(hour=X.index.hour)
         if 'month' in model_def.grouped_by:
             X = X.assign(month=X.index.month)
-        if 'weekday' in model_def.grouped_by:
-            X = apply_weekday(X, 'grouped') # assuming only using the grouped dotw for simplicity
-        #if '_individual' in model_def.grouped_by:
-        #    X = apply_weekday(X, 'individual')
+        if 'weekday_grouped' in model_def.grouped_by:
+            X = apply_weekday(X, 'grouped', False)
+            X.rename(columns={'weekday' : 'weekday_grouped'}, inplace=True)
+        if 'weekday_individual' in model_def.grouped_by:
+            X = apply_weekday(X, 'individual', False)
+            X.rename(columns={'weekday' : 'weekday_individual'}, inplace=True)
+        if 'weekday_holiday_individual' in model_def.grouped_by:
+            X = apply_weekday(X, 'week_holiday_individual', False)
+            X.rename(columns={'weekday' : 'weekday_holiday_individual'}, inplace=True)
+        if 'holiday_individual' in model_def.grouped_by:
+            X = apply_weekday(X, 'holiday_individual', False)
+            X.rename(columns={'weekday' : 'holiday_individual'}, inplace=True)
+        print(X.head(1))
         grouped = X.groupby(model_def.grouped_by)
         group_predict = pd.DataFrame([])
         for _, groupg in grouped:
@@ -143,7 +153,6 @@ def model_predict(x_train, y_train, x_test, model_def, graph=False):
     graph : Boolean 
         Boolean to indicate whether to graph the feature importances.
     """
-
     if model_def.ml_model == 'linear_r': 
         model = LinearRegression()
         temp = model.fit(x_train, y_train).predict(x_test)
@@ -165,10 +174,13 @@ def model_predict(x_train, y_train, x_test, model_def, graph=False):
         if graph:
             pass
             #graph_feature_importance(x_train, model)
+    elif model_def.ml_model == 'xgboost':
+        model=xgb.XGBRegressor(**model_def.kwargs)
+        temp = model.fit(x_train, y_train).predict(x_test)
     elif model_def.ml_model == 'average':
         temp = np.ones((x_test.shape[0], )) * y_train.mean()
     else:
-        print('Unsupported Machine Learning Model')
+        print('ERROR: Unsupported Machine Learning Model')
         temp = pd.DataFrame([])
     return(temp)
 
