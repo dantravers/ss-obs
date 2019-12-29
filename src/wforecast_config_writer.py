@@ -16,13 +16,13 @@ forecast_max_days_ahead : int
 """
 config['hdf5'] = {}
 config['hdf5']['store_name'] = "wforecast.h5"
-config['hdf5']['store_path'] = "C:\\Users\\Dan Travers\\Documents\\dbs\\hdf5"
+config['hdf5']['store_path'] = "C:\\Users\\DanTravers\\Documents\\dbs\\hdf5"
 config['hdf5']['meta_hdf_key'] = 'metadata'
 config['hdf5']['obs_hdf_key'] = 'obs'
 config['query_settings'] = {}
 config['query_settings']['default_earliest_date'] = '2012-01-01'
 config['query_settings']['forecast_max_days_ahead'] = '4'
-config['query_settings']['path'] = 'C:\\Users\\Dan Travers\\Documents\\dbs\\weather\\ecmwf'
+config['query_settings']['path'] = 'C:\\Users\\DanTravers\\Documents\\dbs\\weather\\ecmwf'
 config['query_settings']['location_ref_filename'] = "ecmwf2016-01-02T00:00:00.nc"
 with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/wforecast.ini'), 'w') as configfile:
     config.write(configfile)

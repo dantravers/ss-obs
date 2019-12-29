@@ -78,7 +78,7 @@ import wforecast as wf
 def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_days_ahead, \
           lags, solar, feature_list=[], daylight_hours='', goto_db='Never', goto_file='File', verbose=2):
     """
-    Function to return the key statistics of the cross-validation.
+    Function to return the key statistics of the cross-validation AND the results at the timestep level.
     Runs on a single ss_id taking either weather forecast data or actual observed weather data as input.
     Initially tested on just ECMWF weather forecasts.
     
@@ -125,6 +125,7 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
     Returns
     -------
     DataFrame with one row with the statistics from the Model Run as columns.
+    DataFrame with the (hourly) results. 
     """
     run1= mr.ModelRun([ss_id], 
                    [w_id], 
@@ -152,6 +153,9 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
     for word in model.grouped_by:
         grpd += word[0:1]
     temp['grouped'] = grpd
-    #temp['days_ahead'] = forecast_days_ahead
+    temp['days_ahead'] = forecast_days_ahead
     temp['run'] = timestamp
-    return(temp, pd.concat([run1.results_], keys=[timestamp], names=['run'])[['forecast', 'outturn']])
+    res = pd.concat([run1.results_], keys=[timestamp], names=['run'])[['forecast', 'outturn']]
+    res.loc[:, 'ss_id'] = ss_id
+    res = res.set_index('ss_id', append=True).reorder_levels([0, 2, 1], axis=0)
+    return(temp, res)

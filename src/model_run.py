@@ -15,7 +15,7 @@ from wforecast import WForecast
 from pvlib.solarposition import get_solarposition
 from pvlib.irradiance import get_extra_radiation
 from model_definition import ModelDefinition
-from pv_ml_models import cross_validate_grouped, coef_lr_grouped
+from pv_ml_models import cross_validate_grouped
 from stats_funcs import generate_error_stats, scatter_results
 from location_data_utils import apply_weekday
 
@@ -146,7 +146,7 @@ class ModelRun:
         self.get_target()
         self.create_features()
         
-    def cross_validate(self, capacity_metadata = True):
+    def cross_validate(self, capacity_metadata = False):
         """ Function runs the cross validation on the configuration of data provided.  
         Returns the summary metadata and statistics
         """

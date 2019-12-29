@@ -60,7 +60,11 @@ class Power(SiteData):
             Contents are described in the power_config_writer.py module.
         """
         super(Power, self).__init__(verbose)
-        self.config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/pvstream.ini'))
+        if os.name == 'nt':
+            configpath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/pvstream.ini')
+        else:
+            configpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config/pvstream_lx.ini')
+        self.config.read(configpath)
         # update config file for any local configs passed in:
         for section in self.config:
             if section in local_config:

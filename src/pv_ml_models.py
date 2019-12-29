@@ -28,22 +28,6 @@ def coef_lr(X, y):
     coeft.columns = coeft.iloc[0, :]
     return(coeft.loc['importance', :])
 
-def coef_lr_grouped(X, y, groups = []):
-## function which generates coefficients by groups of data in a list E.g. month, hour, season, regime
-## this function now allows ungrouped runs by passing an empty group, so meaning it can handle all linreg requests.
-    group_coef = pd.DataFrame([])
-    if groups: 
-        grouped = X.groupby(groups)
-        for table, groupg in grouped:
-            yg = y.loc[groupg.index]
-            temp_coef = coef_lr(groupg, yg)
-            temp_coef['month'] = groupg.month.max()
-            temp_coef['hour'] = groupg.hour.max()
-            group_coef = group_coef.append(temp_coef)
-    else:
-        group_coef = group_coef.append(coef_lr(X, y))
-    return(group_coef)   
-
 def cross_validate(X, y, model_def):
     """ Function to cross-validate on a set of data.
 
@@ -91,7 +75,7 @@ def cross_validate(X, y, model_def):
 def cross_validate_grouped(X, y, model_def):
     """ Function to cross-validate, running each grouping in turn.
 
-    The groupings could be month-hour (or by regime for example), so that the cross-validate is performed on each 
+    The groupings could be month-hour (or by regime for example), so that the fitting & cross-validate is performed on each 
     month-hour combination independently.  I.e. the model is cross-validated on each group
     independently and the total cross-validated prediction is knitted together across all
     groups and returned as the result.
@@ -126,7 +110,6 @@ def cross_validate_grouped(X, y, model_def):
         if 'holiday_individual' in model_def.grouped_by:
             X = apply_weekday(X, 'holiday_individual', False)
             X.rename(columns={'weekday' : 'holiday_individual'}, inplace=True)
-        print(X.head(1))
         grouped = X.groupby(model_def.grouped_by)
         group_predict = pd.DataFrame([])
         for _, groupg in grouped:
@@ -174,10 +157,11 @@ def model_predict(x_train, y_train, x_test, model_def, graph=False):
         if graph:
             pass
             #graph_feature_importance(x_train, model)
-    elif model_def.ml_model == 'xgboost':
+    elif model_def.ml_model == 'xg_boost':
         model=xgb.XGBRegressor(**model_def.kwargs)
         temp = model.fit(x_train, y_train).predict(x_test)
-    elif model_def.ml_model == 'average':
+    elif model_def.ml_model == 'average': 
+        # this is a model created as a benchmark for load modelling - it takes just the average of the values across each grouping (E.g. month-hour-dayofweek)
         temp = np.ones((x_test.shape[0], )) * y_train.mean()
     else:
         print('ERROR: Unsupported Machine Learning Model')

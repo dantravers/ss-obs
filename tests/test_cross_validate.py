@@ -15,7 +15,10 @@ from pv_ml_models import cross_validate_grouped, coef_lr_grouped
 from model_definition import ModelDefinition
 
 # directory for all test data (hdfs & bench_*.csv)
-data_dir = 'C:/Users/Dan Travers/Documents/GitHub/ss-obs/tests/test_data'
+if os.name == 'nt':
+    data_dir = 'C:/Users/DanTravers/Documents/GitHub/ss-obs/tests/test_data'
+else:
+    data_dir = '/home/dtravers/winhome/Documents/GitHub/ss-obs/tests/test_data'
 # setup model definitions: 
 kwargs_empty = {}
 lr = ModelDefinition('linear_r', ['month', 'hour'], 10, **kwargs_empty, text='Mth-Hr split')
@@ -27,8 +30,10 @@ start = datetime.date(2016,1,1)
 end = datetime.date(2018, 1, 1)
 weather = md.Midas(2)
 weather.config['hdf5']['store_name'] = os.path.join(data_dir, "midas_test_data.h5")
+weather.config['hdf5']['store_path'] = ''
 power = pw.Power(2)
 power.config['hdf5']['store_name'] = os.path.join(data_dir, "power_test_data.h5")
+power.config['hdf5']['store_path'] = ''
 
 def test_cross_validate():
     tstats = pd.DataFrame([])

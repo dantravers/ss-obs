@@ -10,7 +10,7 @@ import json
 import holidays
 from ss_utilities.generic_tools import haversine_np
 
-def get_fcst_locs(site_list, filename='C:\\Users\\Dan Travers\\Documents\\dbs\\weather\\ecmwf\\ecmwf2016-01-02T00%3A00%3A00.nc', n=1):
+def get_fcst_locs(site_list, filename='C:\\Users\\DanTravers\\Documents\\dbs\\weather\\ecmwf\\ecmwf2016-01-02T00%3A00%3A00.nc', n=1):
     """Function to find the lat/lon of the closest n forecast grid points to every site in ss_list.
 
     Parameters
@@ -89,7 +89,7 @@ def read_netcdf_file(filename, filepath, locations):
     """
 
     file = os.path.join(filepath, filename)
-    time_sep = '%%3A' if os.name == 'nt' else ':'
+    time_sep = ':' if ':' in file else '%%3A'
     forecast_base = timezone('UTC').localize(datetime.datetime.strptime(filename[5:-3], '%Y-%m-%dT%H{0}%M{0}%S'.format(time_sep)))
     loc_dic = { 'latitude' : locations.latitude.unique(), \
                'longitude' : locations.longitude.unique()}

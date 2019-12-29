@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "/home/dtravers/winhome/Documents/GitHub/ss-obs"
+		}
+	],
+	"settings": {
+		"python.pythonPath": "/home/dtravers/anaconda3/envs/pgwn37min/bin/python.exe",
+		"python.testing.cwd": ""
+	}
+}

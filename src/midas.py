@@ -1,6 +1,6 @@
 ## Classes for getting weather data
 
-# Dan Travers
+# DanTravers
 # 29/01/19
 # Inherited from super class SiteData implements Midas data observations
 # Potential change would be to store as numpy arrays and convert to dataframe on extraction.
@@ -50,7 +50,11 @@ class Midas(SiteData):
         """
         super(Midas, self).__init__(verbose)
         self.config = configparser.ConfigParser()
-        self.config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/midas.ini'))
+        if os.name == 'nt':
+            configpath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/midas.ini')
+        else:
+            configpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config/midas_lx.ini')
+        self.config.read(configpath)
         # update config file for any local configs passed in:
         for section in self.config:
             if section in local_config:

@@ -104,9 +104,9 @@ def stats(df, cap, epex=None, sbsp=None):
                         'wRMSE': wRMSE,
                         'hrly_val' : np.around(hrly_val, decimals=3), 
                         'Rsqd': Rsqd
-                      }, 
-                    columns = ['count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_val', 'Rsqd'],
-                    index=[0]) )
+                        }, 
+                        columns = ['count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_val', 'Rsqd'],
+                        index=[0]) )
 
 def heatmap_summary_stats(run_stats):
     pass

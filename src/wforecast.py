@@ -48,7 +48,11 @@ class WForecast(Midas):
         """
         super(WForecast, self).__init__(verbose)
         self.config = configparser.ConfigParser()
-        self.config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/wforecast.ini'))
+        if os.name == 'nt':
+            configpath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/wforecast.ini')
+        else:
+            configpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config/wforecast_lx.ini')
+        self.config.read(configpath)
         # update config file for any local configs passed in:
         for section in self.config:
             if section in local_config:
@@ -62,7 +66,6 @@ class WForecast(Midas):
         """ Method to load observations from netCDF files or cache for specified date range into object.
         Method populates data in self.obs dataframe and metadata is derived.
         The method always forces data in memory to be refreshed from the cache if available.  
-        If 
 
         Parameters
         ----------
@@ -123,8 +126,8 @@ class WForecast(Midas):
                 elif goto_file == 'File':
                     original_len = len(self.obs)
                     load_count = 0
-                    time_sep = '%%3A' if os.name == 'nt' else ':'
                     for file in os.listdir(path):
+                        time_sep = ':' if ':' in file else '%%3A'
                         if datetime.datetime.strptime(file[5:-3], '%Y-%m-%dT%H{0}%M{0}%S'.format(time_sep)).date() in date_list: 
                             day = read_netcdf_file(file, path, locations)
                             load_count += len(day)

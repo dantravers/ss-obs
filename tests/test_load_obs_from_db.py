@@ -17,7 +17,10 @@ from location_data_utils import (cross_locations, get_fcst_locs,
                                  get_longest_ss_ids, read_netcdf_file)
 
 # setup common data
-data_dir = 'C:/Users/Dan Travers/Documents/GitHub/ss-obs/tests/test_data'
+if os.name == 'nt':
+    data_dir = 'C:/Users/DanTravers/Documents/GitHub/ss-obs/tests/test_data'
+else:
+    data_dir = '/home/dtravers/winhome/Documents/GitHub/ss-obs/tests/test_data'
 netcdf_dir = os.path.join(data_dir, 'netcdf')
 netcdf_file = 'ecmwf2016-01-02T00%3A00%3A00.nc'
 
