@@ -11,7 +11,7 @@ import importlib
 import model_run as mr
 import power as pw
 import midas as md
-from pv_ml_models import cross_validate_grouped, coef_lr_grouped
+from pv_ml_models import cross_validate_grouped
 from model_definition import ModelDefinition
 
 # directory for all test data (hdfs & bench_*.csv)

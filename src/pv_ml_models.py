@@ -10,7 +10,7 @@ import xgboost as xgb
 from sklearn.linear_model import LinearRegression 
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split, cross_val_score, KFold, LeaveOneOut
+from sklearn.model_selection import train_test_split, cross_val_score, cross_val_predict, KFold, LeaveOneOut
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
 from location_data_utils import apply_weekday
@@ -54,19 +54,13 @@ def cross_validate(X, y, model_def):
     else:
         n_folds = min(X.shape[0], model_def.no_folds)
     if n_folds > 1: 
-        max_rows = X.shape[0] if model_def.max_runs == 0 else n_folds * model_def.max_rows_in_fold
-        raw_predict = pd.DataFrame([])
         kf = KFold(n_splits=n_folds, shuffle=model_def.shuffle, random_state=0)
-        #loop through cross-validation folds, training & predicting each fold and gathering data
-        for train_i, test_i in kf.split(X.iloc[:max_rows,]):
-            predict = model_predict(X.iloc[train_i], y.iloc[train_i], X.iloc[test_i], model_def)
-            temp = pd.DataFrame({'month': X.iloc[test_i].index.month, 
-                                'hour': X.iloc[test_i].index.hour,
-                                'forecast': predict,
-                                'outturn': y.iloc[test_i]})
-            raw_predict = raw_predict.append(temp)
-        ## removed R^2 scores, as for the loo validation, they are all zero, so not informative
-        ## essentially they tend to 0 as the number of folds increases to no_samples
+        arr = cross_val_predict(model_def.model, X, y, cv=kf)
+        raw_predict = pd.DataFrame({'month': y.index.month, 
+                                'hour': y.index.hour,
+                                'forecast': arr,
+                                'outturn': y},
+                                index=y.index)
         return(raw_predict)
     else:
         print('One grouping has only one element, so skipping')
@@ -113,60 +107,10 @@ def cross_validate_grouped(X, y, model_def):
         grouped = X.groupby(model_def.grouped_by)
         group_predict = pd.DataFrame([])
         for _, groupg in grouped:
-            yg = y.loc[groupg.index]
-            group_predict = group_predict.append(cross_validate(groupg, yg, model_def))
+            group_predict = group_predict.append(cross_validate(groupg, y.loc[groupg.index], model_def))
     else: 
         group_predict = cross_validate(X, y, model_def)
     return(group_predict)
-
-def model_predict(x_train, y_train, x_test, model_def, graph=False):
-    """ Function to call the appropriate ML algorithm, fit and predict on train and test data respectively.
-
-    Parameters
-    ----------
-    x_train : DataFrame
-        The set of features to be used in training.
-    y_train : DataFrame
-        Single column dataframe containing the target to train against.
-    x_test : DataFrame
-        Set of features to be used to test the fitted model.
-    model_def : obj:ModelDefinition
-        An instance of the ModelDefinition class.  This is a lightweight class containing the 
-        ML model to be employed and parameters of the model (as kwargs).
-    graph : Boolean 
-        Boolean to indicate whether to graph the feature importances.
-    """
-    if model_def.ml_model == 'linear_r': 
-        model = LinearRegression()
-        temp = model.fit(x_train, y_train).predict(x_test)
-    elif model_def.ml_model == 'linear_poly':
-        model = Pipeline([('poly', PolynomialFeatures(**model_def.kwargs)), ('linear', LinearRegression(fit_intercept=False))])
-        temp = model.fit(x_train, y_train).predict(x_test)
-    elif model_def.ml_model == 'random_f': 
-        model = RandomForestRegressor(**model_def.kwargs)
-        temp = model.fit(x_train, y_train).predict(x_test)
-        if graph:
-            pass
-            #graph_feature_importance(x_train, model)
-    elif model_def.ml_model == 'tree': 
-        model = DecisionTreeRegressor(**model_def.kwargs)
-        temp = model.fit(x_train, y_train).predict(x_test)
-    elif model_def.ml_model == 'g_boost':
-        model = GradientBoostingRegressor(**model_def.kwargs)
-        temp = model.fit(x_train, y_train).predict(x_test)
-        if graph:
-            pass
-            #graph_feature_importance(x_train, model)
-    elif model_def.ml_model == 'xg_boost':
-        model=xgb.XGBRegressor(**model_def.kwargs)
-        temp = model.fit(x_train, y_train).predict(x_test)
-    elif model_def.ml_model == 'average': 
-        # this is a model created as a benchmark for load modelling - it takes just the average of the values across each grouping (E.g. month-hour-dayofweek)
-        temp = np.ones((x_test.shape[0], )) * y_train.mean()
-    else:
-        print('ERROR: Unsupported Machine Learning Model')
-        temp = pd.DataFrame([])
-    return(temp)
 
 """def graph_feature_importance(x_train, model):
     n_features = x_train.shape[1]
