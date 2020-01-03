@@ -22,10 +22,16 @@ class ModelDefinition:
         See the function model_predict for the methods supported.
     grouped_by : list
         A list of the parameters (features) to be grouped by when creating the model runs.
-        Each group in trained and run independently of all other groups.
+        Each group in modelled, trained and predicted independently of all other groups.
     no_folds : int
         Number of folds in k-fold cross-validation. If is equal to zero, then a leave-one-out
         validation is performed.
+    cross_val_grp : str
+        Parameter to pass into the K-fold validation grouping. Acceptable values: 
+            dayofyear, week, month.
+        If string is empty, then simple k-fold validation is used.
+        This is designed to ensure we don't have information leakage from test set: if we train on hours adjacent in
+        hour and day-of-year, we could leak quite badly.  Suggest to use week, or day-of-year.  
     max_runs : int
         Limits the maximum number of runs performed in the cross-validation.  This is to allow 
         performance to be capped at an acceptable level.  The default of zero means there is no 
@@ -41,14 +47,15 @@ class ModelDefinition:
     Attributes
     ----------
     model : obj
-        The scikit learn model with parameters set.
+        The scikit learn estimator with parameters set.
     """
 
-    def __init__(self, ml_model='linear_r', grouped_by=[], no_folds=0, \
+    def __init__(self, ml_model='linear_r', grouped_by=[], no_folds=0, cross_val_grp = '', \
                 max_runs=0, shuffle=True, text='', **kwargs):
         self.ml_model = ml_model
         self.grouped_by = grouped_by
         self.no_folds = no_folds
+        self.cross_val_grp = cross_val_grp
         self.max_runs = max_runs
         self.shuffle = shuffle
         self.text = text 
@@ -61,6 +68,7 @@ class ModelDefinition:
             'ml_model' : self.ml_model, 
             'grouped_by' : str(self.grouped_by), 
             'no_folds' : self.no_folds, 
+            'cross_val_grp' : self.cross_val_grp,
             'max_runs' : self.max_runs, 
             'shuffle' : self.shuffle, 
             'text' : self.text,
@@ -95,3 +103,14 @@ class ModelDefinition:
         else:
             print('ERROR: Unsupported Machine Learning Model')
         self.model = model
+
+    def cross_val_grp_df(self, df):
+        if self.cross_val_grp == 'dayofyear':
+            grouping = pd.DataFrame(index=df.index).assign(grp=df.index.dayofyear)
+        elif self.cross_val_grp == 'week':
+            grouping = pd.DataFrame(index=df.index).assign(grp=df.index.week)
+        elif self.cross_val_grp == 'month':
+            grouping = pd.DataFrame(index=df.index).assign(grp=df.index.month)
+        else:
+            print("Grouping of cross-validation isn't supported in model_definition.")
+        return(grouping)

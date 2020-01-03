@@ -10,7 +10,7 @@ import xgboost as xgb
 from sklearn.linear_model import LinearRegression 
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split, cross_val_score, cross_val_predict, KFold, LeaveOneOut
+from sklearn.model_selection import cross_val_predict, KFold, GroupKFold
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
 from location_data_utils import apply_weekday
@@ -41,7 +41,7 @@ def cross_validate(X, y, model_def):
     The set of features.
 
     y : DataFrame
-    Single column dataframe containing the target.
+    Multiple column dataframe containing the target, actual and month, hour fields.
 
     model_def : obj:ModelDefinition
     An instance of the ModelDefinition class.  This is a lightweight class containing the 
@@ -53,12 +53,14 @@ def cross_validate(X, y, model_def):
         n_folds = X.shape[0]
     else:
         n_folds = min(X.shape[0], model_def.no_folds)
-    if n_folds > 1: 
-        kf = KFold(n_splits=n_folds, shuffle=model_def.shuffle, random_state=0)
-        arr = cross_val_predict(model_def.model, X, y, cv=kf)
-        raw_predict = pd.DataFrame({'month': y.index.month, 
-                                'hour': y.index.hour,
-                                'forecast': arr,
+    if n_folds > 1:
+        if model_def.cross_val_grp == '': 
+            kf = KFold(n_splits=n_folds, shuffle=model_def.shuffle, random_state=0)
+            arr = cross_val_predict(model_def.model, X, y, cv=kf)        
+        else:
+            kf = GroupKFold(n_folds)
+            arr = cross_val_predict(model_def.model, X, y, model_def.cross_val_grp_df(X), cv=kf)
+        raw_predict = pd.DataFrame({'forecast': arr,
                                 'outturn': y},
                                 index=y.index)
         return(raw_predict)

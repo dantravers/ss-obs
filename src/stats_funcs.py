@@ -133,3 +133,11 @@ def scatter_results(results):
     grid = sns.jointplot(x='outturn', y='diff', data=results, kind='reg', ratio=10)
     grid.fig.set_figwidth(16)
     grid.fig.set_figheight(4)"""
+
+def set_month_hour(df):
+    """ Function to assign month and hour columns to dataframe based on df containing datetime index
+    """
+    
+    df = df.assign(hour=df.index.hour)
+    df = df.assign(month=df.index.shift(-1, freq='h').month)
+    return(df)

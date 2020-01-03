@@ -161,7 +161,7 @@ class ModelRun:
             cap = self.target_capacity * 1000
         else:
             cap = self.target.iloc[:,0].max()
-        self.stats_ = generate_error_stats(self.results_, cap, self.power_data.epex, self.power_data.sbsp, splits=False)
+        self.stats_ = generate_error_stats(assign_month_hour(self.results_), cap, self.power_data.epex, self.power_data.sbsp, splits=False)
 
     def populate_wh(self):
         """ Populates the weather data object with requested data."""
@@ -257,12 +257,11 @@ class ModelRun:
         """
 
         if len(self.solar_geometry) == 0:
-            self.features = self.features.assign(hour=self.features.index.hour)
-            self.features = self.features.assign(month=self.features.index.shift(-1, freq='h').month)
+            self.features = assign_month_hour(self.features)
         if 'month' in self.solar_geometry:
             self.features = self.features.assign(month=self.features.index.shift(-1, freq='h').month)
         if 'dayofyear' in self.solar_geometry: # this outperforms the month feature often and can replace it 
-            self.features = self.features.assign(dayofyear=self.features.index.dayofyear+10)
+            self.features = self.features.assign(dayofyear=self.features.index.dayofyear) # found with load profiles I had to add 10 days
             self.features['dayofyear_sin'] = self.features.dayofyear.apply(lambda x: np.sin(np.pi*2* (x)/ 365))
             self.features['dayofyear_cos'] = self.features.dayofyear.apply(lambda x: np.cos(np.pi*2* (x)/ 365))
             #self.features.drop('dayofyear', axis=1, inplace=True) # commented out, as found that leaving this in added ~2% of accuracy.
@@ -409,7 +408,7 @@ class ModelRun:
         """ Method to print messages filtered by verbosity.
         The verbosity setting is a class attribute and should be in range [0:3]
 
-        parameters
+        Parameters
         ----------
         message : str
             Message to be printed (or not if not important enough).
@@ -422,3 +421,11 @@ class ModelRun:
 
         if message_priority<=self.verbose:
             print(message)
+
+def assign_month_hour(df):
+    """ Function to assign month and hour columns to dataframe based on df containing datetime index
+    """
+    
+    df = df.assign(hour=df.index.hour)
+    df = df.assign(month=df.index.shift(-1, freq='h').month)
+    return(df)

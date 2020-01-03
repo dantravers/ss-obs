@@ -24,7 +24,11 @@ kwargs_empty = {}
 lr = ModelDefinition('linear_r', ['month', 'hour'], 10, **kwargs_empty, text='Mth-Hr split')
 kwargs_grad = {"n_estimators": 100, "learning_rate" : 0.1, "max_depth" : 5, "random_state" : 0, "loss" : "ls"}
 grad = ModelDefinition('g_boost', [], 10, **kwargs_grad)
-ml_model_list = [lr, grad]
+kwargs_xgrad = {"objective" : "reg:squarederror", "eval_metric" : "mae", "learning_rate" : .09, "max_depth" : 5, 
+                "colsample_bytree" : .9, "min_split_loss" : 0.0, "colsample_bylevel" : 1, "lambda" : 0.5}
+xgrad = ModelDefinition('xg_boost', [], 5, 'week', 0, True, '', **kwargs_xgrad)
+xgrad2 = ModelDefinition('xg_boost', [], 2, 'dayofyear', 0, True, '', **kwargs_xgrad)
+ml_model_list = [lr, grad, xgrad, xgrad2]
 # setup dates and weather / PV data
 start = datetime.date(2016,1,1)
 end = datetime.date(2018, 1, 1)
@@ -50,10 +54,12 @@ def test_cross_validate():
                         verbose=2)
         run1.cross_validate(False)
         # test the results are equal for 2 ML models
-        file_name = os.path.join(data_dir, "bench_results_" + model.ml_model + ".csv" )
+        file_name = os.path.join(data_dir, "bench_results_" + model.ml_model + model.cross_val_grp + ".csv" )
+        print(file_name)
         bench_results = pd.read_csv(file_name, index_col=0, parse_dates=True)
-        print("Testing model results: {}".format(model.ml_model))
-        pd.testing.assert_frame_equal(run1.results_.iloc[:, [2, 3]], bench_results.iloc[:, [2, 3]])
+        print("Testing model results: {}, {}".format(model.ml_model, model.cross_val_grp))
+        run1.results_ = run1.results_.astype( {"forecast": np.float64} )
+        pd.testing.assert_frame_equal(run1.results_.iloc[:, [0, 1]], bench_results.iloc[:, [0, 1]])
         # collect stats
         temp = run1.stats_.iloc[0:1].copy()
         temp['model'] = model.ml_model
