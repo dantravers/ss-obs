@@ -264,7 +264,7 @@ class ModelRun:
             self.features = self.features.assign(dayofyear=self.features.index.dayofyear) # found with load profiles I had to add 10 days
             self.features['dayofyear_sin'] = self.features.dayofyear.apply(lambda x: np.sin(np.pi*2* (x)/ 365))
             self.features['dayofyear_cos'] = self.features.dayofyear.apply(lambda x: np.cos(np.pi*2* (x)/ 365))
-            #self.features.drop('dayofyear', axis=1, inplace=True) # commented out, as found that leaving this in added ~2% of accuracy.
+            self.features.drop('dayofyear', axis=1, inplace=True)
         if 'hour' in self.solar_geometry:
             self.features = self.features.assign(hour=self.features.index.hour)
         if 'hour_circular' in self.solar_geometry:
@@ -323,6 +323,10 @@ class ModelRun:
         elif len(self.daylight_hours)==2:
             low_hour, high_hour = self.daylight_hours[0], self.daylight_hours[1]
             self.features = self.features[self.features.index.hour.isin(range(low_hour, high_hour)) ]
+        elif len(self.daylight_hours)==1:  # apply mask to filter only hours with sun elevation above threshold
+            self.features = self.features\
+                [(get_solarposition(self.features.index.shift(-30, freq='min'), self.lat, self.lon).\
+                apparent_elevation>self.daylight_hours[0]).values]
         else: 
             self.myprint('Daylight hours attribute is not valid.', 1)
         self.__remove_zero_outturn(.005)

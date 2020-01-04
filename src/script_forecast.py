@@ -86,7 +86,9 @@ def main():
                 print('forecast:', f_id, ss_id, model.ml_model, i)
                 temp_stats, temp_results = x_val_results_plus(ss_id, f_id, power, w_forecast, model, s, e, i, \
                                                     lags, \
-                                                    ['month', 'hour'], [], '', goto_db, 'None', 2)
+                                                    ['month', 'hour'], 
+                                                    ['irr', 'u', 'v', 'temp'], 
+                                                    '', goto_db, 'None', 2)
                 tstats = tstats.append(temp_stats)
                 if i==output_days: 
                     tresults = tresults.append(temp_results)

@@ -104,7 +104,7 @@ class ModelDefinition:
             print('ERROR: Unsupported Machine Learning Model')
         self.model = model
 
-    def cross_val_grp_df(self, df):
+    def cross_val_grp_labels(self, df):
         if self.cross_val_grp == 'dayofyear':
             grouping = pd.DataFrame(index=df.index).assign(grp=df.index.dayofyear)
         elif self.cross_val_grp == 'week':

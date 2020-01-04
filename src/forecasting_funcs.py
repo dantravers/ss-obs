@@ -69,12 +69,6 @@ def x_val_results(ss_id, w_id, power, weather, model, start, end, forecast_days_
     temp['days_ahead'] = forecast_days_ahead
     return(temp)
 
-import pandas as pd
-import model_run as mr
-import power as pw
-import midas as md
-import wforecast as wf
-
 def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_days_ahead, \
           lags, solar, feature_list=[], daylight_hours='', goto_db='Never', goto_file='File', verbose=2):
     """
