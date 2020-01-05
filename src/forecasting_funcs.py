@@ -49,7 +49,7 @@ def x_val_results(ss_id, w_id, power, weather, model, start, end, forecast_days_
     -------
     DataFrame with one row with the statistics from the Model Run as columns.
     """
-    run1= mr.ModelRun([ss_id], 
+    run= mr.ModelRun([ss_id], 
                    [w_id], 
                    power, weather,
                    model, 
@@ -60,8 +60,8 @@ def x_val_results(ss_id, w_id, power, weather, model, start, end, forecast_days_
                       goto_db=goto_db, 
                       goto_file=goto_file,
                      verbose=verbose)
-    run1.cross_validate(False)
-    temp = run1.stats_.iloc[0:1].copy()
+    run.cross_validate(False)
+    temp = run.stats_.iloc[0:1].copy()
     temp['model'] = model.ml_model
     temp['lags'] = str(lags['lags']['irr'])
     temp['w_id'] = w_id
@@ -121,7 +121,7 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
     DataFrame with one row with the statistics from the Model Run as columns.
     DataFrame with the (hourly) results. 
     """
-    run1= mr.ModelRun([ss_id], 
+    run= mr.ModelRun([ss_id], 
                    [w_id], 
                    power, weather,
                    model, 
@@ -134,22 +134,22 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
                       goto_db=goto_db, 
                       goto_file=goto_file,
                      verbose=verbose)
-    run1.cross_validate(False)
+    run.cross_validate(False)
     timestamp = datetime.datetime.now().replace(microsecond=0)
-    temp = run1.stats_.iloc[0:1].copy()
+    temp = run.stats_.iloc[0:1].copy()
     temp['model'] = model.ml_model
     for entry in lags:
         for feature in lags[entry]: 
             temp['lags'] = entry[0:1]+'-'+feature[0:3]+'-'+str(lags[entry][feature])
     temp['w_id'] = w_id
     temp['ss_id'] = ss_id
-    grpd = ''
+    """grpd = ''
     for word in model.grouped_by:
         grpd += word[0:1]
-    temp['grouped'] = grpd
+    temp['grouped'] = grpd"""
     temp['days_ahead'] = forecast_days_ahead
     temp['run'] = timestamp
-    res = pd.concat([run1.results_], keys=[timestamp], names=['run'])[['forecast', 'outturn']]
+    res = pd.concat([run.results_], keys=[timestamp], names=['run'])[['forecast', 'outturn']]
     res.loc[:, 'ss_id'] = ss_id
     res = res.set_index('ss_id', append=True).reorder_levels([0, 2, 1], axis=0)
     return(temp, res)

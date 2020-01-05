@@ -18,12 +18,13 @@ from location_data_utils import (cross_locations, get_fcst_locs,
 from model_definition import ModelDefinition
 
 def main():
-    """ Function to output the average yield from list of ss_ids over a period of time.
+    """
     Arguments
     ---------
     arg1 : name of the input.list file - should be a list with ss_ids to query.
     arg2 : name of output file to write results to.
-    arg3 : If it is running in wsl, so it picks up correct config files.
+    arg3 : the forecast_day_ahead (integer) to output the hourly results to file (if it exists) 
+    arg4 : "wsl", if it is running in wsl, so it picks up correct config files.  Or missing.
     """ 
 
     # input ss_ids.list and output files
@@ -57,7 +58,11 @@ def main():
     kwargs_empty = {}
     lr = ModelDefinition('linear_r', ['month', 'hour'], 5, **kwargs_empty, text='Mth-Hr split')
     kwargs_grad = {"n_estimators": 100, "learning_rate" : 0.1, "max_depth" : 5, "random_state" : 0, "loss" : "ls"}
-    grad = ModelDefinition('g_boost', [], 5, **kwargs_grad)
+    grad = ModelDefinition('g_boost', [], 5, 'dayofyear', **kwargs_grad)
+    kwargs_xgrad = {"objective" : "reg:squarederror", "eval_metric" : "mae", "learning_rate" : .06, "max_depth" : 6, 
+                "colsample_bytree" : .9, "min_split_loss" : 0.0, "colsample_bylevel" : 1, "lambda" : 0.5, 
+               "min_child_weight" : 4, "n_estimators" : 130, "gamma" : 0, "subsample" : 0.9, "reg_alpha" : 100}
+    xgrad = ModelDefinition('xg_boost', [], 5, 'dayofyear', 0, True, '', **kwargs_xgrad)
     
     with open(ss_file, 'r') as f:
         ss_list = f.readlines()
@@ -80,15 +85,17 @@ def main():
         ss_id = int(row['ss_id'])
         f_id = row['f_id']
         print(ss_id, f_id)
-        for model in [ grad]: 
+        for model in [xgrad]: 
             lags = { 'lags' : {'irr' : []}} if model==lr else { 'lags' : {'irr' : [1, 2, 3, -1, -2]}}
             for i in range(0, 4): # loop for 4 days ahead.
                 print('forecast:', f_id, ss_id, model.ml_model, i)
-                temp_stats, temp_results = x_val_results_plus(ss_id, f_id, power, w_forecast, model, s, e, i, \
-                                                    lags, \
-                                                    ['month', 'hour'], 
-                                                    ['irr', 'u', 'v', 'temp'], 
-                                                    '', goto_db, 'None', 2)
+                temp_stats, temp_results = x_val_results_plus(ss_id, f_id, power, w_forecast, model, s, e, 
+                                                                i, \
+                                                                lags, \
+                                                                ['dayofyear', 'hour'], 
+                                                                ['irr', 'u', 'v', 'temp'], # these need to be modified if using Midas vs ECMWF weather
+                                                                [10], 
+                                                                goto_db, 'None', 2)
                 tstats = tstats.append(temp_stats)
                 if i==output_days: 
                     tresults = tresults.append(temp_results)
