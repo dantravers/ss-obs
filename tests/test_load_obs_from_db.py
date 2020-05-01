@@ -22,7 +22,7 @@ if os.name == 'nt':
 else:
     data_dir = '/home/dtravers/winhome/Documents/GitHub/ss-obs/tests/test_data'
 netcdf_dir = os.path.join(data_dir, 'netcdf')
-netcdf_file = 'ecmwf2016-01-02T00%3A00%3A00.nc'
+netcdf_file = 'ecmwf2016-01-02T00.nc'
 
 def test_load_midas_obs_from_db():
     s = datetime.datetime(2017, 1, 1).date() 

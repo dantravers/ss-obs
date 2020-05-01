@@ -57,12 +57,19 @@ def cross_validate(X, y, model_def):
         if model_def.cross_val_grp == '': 
             kf = KFold(n_splits=n_folds, shuffle=model_def.shuffle, random_state=0)
             arr = cross_val_predict(model_def.model, X, y, cv=kf)        
+            raw_predict = pd.DataFrame({'forecast': arr,
+                                    'outturn': y},
+                                    index=y.index)
         else:
-            kf = GroupKFold(n_folds)
-            arr = cross_val_predict(model_def.model, X.values, y.values, model_def.cross_val_grp_labels(X).values, cv=kf)
-        raw_predict = pd.DataFrame({'forecast': arr,
-                                'outturn': y},
-                                index=y.index)
+            if len(np.unique(model_def.cross_val_grp_labels(X).values)) >= model_def.no_folds:
+                kf = GroupKFold(n_folds)
+                arr = cross_val_predict(model_def.model, X.values, y.values, model_def.cross_val_grp_labels(X).values, cv=kf)
+                raw_predict = pd.DataFrame({'forecast': arr,
+                                        'outturn': y},
+                                        index=y.index)
+            else:
+                print('Skipping group as not enough group-kf splits present.')
+                raw_predict = pd.DataFrame([])
         return(raw_predict)
     else:
         print('One grouping has only one element, so skipping')

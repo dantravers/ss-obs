@@ -89,8 +89,8 @@ def read_netcdf_file(filename, filepath, locations):
     """
 
     file = os.path.join(filepath, filename)
-    time_sep = ':' if ':' in file else '%%3A'
-    forecast_base = timezone('UTC').localize(datetime.datetime.strptime(filename[5:-3], '%Y-%m-%dT%H{0}%M{0}%S'.format(time_sep)))
+    forecast_base = timezone('UTC').localize(datetime.datetime.strptime(filename[5:-3], '%Y-%m-%dT%H'))
+    
     loc_dic = { 'latitude' : locations.latitude.unique(), \
                'longitude' : locations.longitude.unique()}
     DS = xr.open_dataset(file)

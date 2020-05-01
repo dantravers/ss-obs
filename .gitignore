@@ -16,3 +16,4 @@ src/ssids_8441.list
 src/target_diag.csv
 src/res_8441_loc.csv
 src/feat_diag.csv
+src/debug_fcst_script.py

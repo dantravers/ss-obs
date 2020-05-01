@@ -86,7 +86,7 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
     power : obj:Power
         Instance of Power class
     weather : obj:Weather
-        Instance of the Weather class
+        Instance of the Weather class - midas or w_forecat type.
     model : obj:Model
         Instance of the Model class
     start : datetime
@@ -98,9 +98,9 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
     lags : dict
         Lags used as input to ModelRun
     solar : list
-        The solar geometry fields to use in ModelRun, which includes 'dotw' feature.
+        The solar geometry fields to use in ModelRun, which includes 'dotw' feature for load modelling.
     feature_list : list
-        List fieatures to include, to if empty list, then uses all weather parameters.
+        List fieatures to include.
     daylight_hours : obj:'list' of int
         If a list of length 2, these are the integer numbers for the first and last hours included in analysis.  
         To include all hours, enter a list of length 2 with entries [0, 25]
