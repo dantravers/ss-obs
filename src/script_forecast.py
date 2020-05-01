@@ -23,7 +23,8 @@ def main():
     ---------
     arg1 : name of the input.list file - should be a list with ss_ids to query.
     arg2 : name of output file to write results to.
-    arg3 : the forecast_day_ahead (integer) to output the hourly results to file (if it exists) 
+    arg3 : the forecast_day_ahead: two binary digits, each representing (by position) 
+            if day 0 or day 1 details are output to file E.g. 01 is output just day 1 ahead details
     arg4 : "wsl", if it is running in wsl, so it picks up correct config files.  Or missing.
     """ 
 
@@ -34,7 +35,8 @@ def main():
     else:
         raise(Exception)
     if len(sys.argv) > 3:
-        output_days = int(sys.argv[3])
+        days_ahead = sys.argv[3] + '0000'
+
     wsl = "" if len(sys.argv) <= 4 else sys.argv[4]
 
     # netcdf_file locations:
@@ -51,7 +53,7 @@ def main():
 
     # start / end dates
     s = datetime.datetime(2016, 1, 1).date()
-    e = datetime.datetime(2018, 1, 1).date()
+    e = datetime.datetime(2016, 1, 10).date()
     goto_db = ''
 
     # ml model setup
@@ -78,7 +80,8 @@ def main():
     fpairings = pd.DataFrame(ss_list, columns=['ss_id']).merge(locations.astype({'site_id':np.int64}), left_on='ss_id', right_on='site_id', how='inner').drop('site_id', axis=1)
 
     tstats = pd.DataFrame([])
-    tresults = pd.DataFrame([])
+    tresults0 = pd.DataFrame([])
+    tresults1 = pd.DataFrame([])
     # run forecast runs 
     # can modify ML model used in here:
     for index, row in fpairings[:].iterrows(): 
@@ -97,10 +100,15 @@ def main():
                                                                 [10], 
                                                                 goto_db, 'None', 2)
                 tstats = tstats.append(temp_stats)
-                if i==output_days: 
-                    tresults = tresults.append(temp_results)
+                if days_ahead[i]=='1':
+                    print(i, days_ahead[i])
+                    if i==0:
+                        tresults0 = tresults0.append(temp_results)
+                    if i==1:
+                        tresults1 = tresults1.append(temp_results)
     tstats.to_csv(output_file)
-    tresults.to_csv(output_file.split('.')[0]+'_res.csv')
+    tresults0.to_csv(output_file.split('.')[0]+'_res0.csv')
+    tresults1.to_csv(output_file.split('.')[0]+'_res1.csv')
     print('Finished')
 
 if __name__ == "__main__":
