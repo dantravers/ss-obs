@@ -47,8 +47,6 @@ def main():
         config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/wforecast.ini'))
     netcdf_path = config['query_settings']['path']
     location_ref_filename = config['query_settings']['location_ref_filename']
-    if (os.name == 'nt') |  (wsl == 'wsl'):
-        location_ref_filename = location_ref_filename.replace(':', '%3A')
     location_ref = os.path.join(netcdf_path, location_ref_filename)
 
     # start / end dates
