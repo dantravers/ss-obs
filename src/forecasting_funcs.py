@@ -122,18 +122,18 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
     DataFrame with the (hourly) results. 
     """
     run= mr.ModelRun([ss_id], 
-                   [w_id], 
-                   power, weather,
-                   model, 
-                   start, end, 
-                   forecast_days_ahead=forecast_days_ahead, 
+                    [w_id], 
+                    power, weather,
+                    model, 
+                    start, end, 
+                    forecast_days_ahead=forecast_days_ahead, 
                     lagged_variables=lags,
                     daylight_hours=daylight_hours,
-                      solar_geometry=solar,
-                      feature_list=feature_list,
-                      goto_db=goto_db, 
-                      goto_file=goto_file,
-                     verbose=verbose)
+                    solar_geometry=solar,
+                    feature_list=feature_list,
+                    goto_db=goto_db, 
+                    goto_file=goto_file,
+                    verbose=verbose)
     run.cross_validate(False)
     timestamp = datetime.datetime.now().replace(microsecond=0)
     temp = run.stats_.iloc[0:1].copy()

@@ -74,9 +74,18 @@ class Power(SiteData):
         self.power_type = power_type
         self.stored_as = power_type[0:3]
         self.periods_per_day = (24 * 60) / int(self.power_type[0:2])
+        self.set_prices()
+
+    def set_prices(self, sbsp_path='', epex_path=''):
         if self.config['prices']['use_prices'] == 'True':
-            self.sbsp = pd.read_csv(self.config['prices']['sbsp'], index_col='datetime', parse_dates=['datetime'], dayfirst=True)
-            self.epex = pd.read_csv(self.config['prices']['epex'], index_col='datetime', parse_dates=['datetime'], dayfirst=True)
+            if not sbsp_path:
+                sbsp_path = self.config['prices']['sbsp']
+            self.sbsp = pd.read_csv(sbsp_path, index_col='datetime', parse_dates=['datetime'], \
+                infer_datetime_format=True, dayfirst=True)
+            if not epex_path:
+                epex_path = self.config['prices']['epex']
+            self.epex = pd.read_csv(epex_path, index_col='datetime', parse_dates=['datetime'], \
+                infer_datetime_format=True, dayfirst=True)
 
     def load_metadata_db(self, site_list):
         """ Overrides function in superclass. 
@@ -137,7 +146,7 @@ class Power(SiteData):
         if (self.power_type == '30min_PV') & (self.stored_as == '30m'):
             self.__load_ss30_db(site_id, start_date, end_date)
         else:
-            self.myprint('Unsupported power_type in Power object or data has been resampled in instance.', 1)
+            self.myprint('Unsupported power_type in Power object or data has been resampled in memory - start with new object if loading from db.', 1)
         super(Power, self).load_obs_db(site_id, start_date, end_date, graph)
 
     def save_to_hdf(self):
@@ -188,7 +197,7 @@ class Power(SiteData):
             Frequency at which the data should be returned to the user.  The only supported formats are
             currently 30m and 1H.
         """
-        
+
         if freq == '1H': 
             if self.stored_as == '30m':
                 pvhourly = pd.DataFrame(self.obs.reset_index(level='site_id').groupby('site_id')['outturn'].resample('1H',closed='right', loffset='1H').sum())

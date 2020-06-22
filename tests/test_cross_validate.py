@@ -21,9 +21,9 @@ else:
     data_dir = '/home/dtravers/winhome/Documents/GitHub/ss-obs/tests/test_data'
 # setup model definitions: 
 kwargs_empty = {}
-lr = ModelDefinition('linear_r', ['month', 'hour'], 10, **kwargs_empty, text='Mth-Hr split')
+lr = ModelDefinition('linear_r', ['month', 'hour'], 10, '', **kwargs_empty, text='Mth-Hr split')
 kwargs_grad = {"n_estimators": 100, "learning_rate" : 0.1, "max_depth" : 5, "random_state" : 0, "loss" : "ls"}
-grad = ModelDefinition('g_boost', [], 10, **kwargs_grad)
+grad = ModelDefinition('g_boost', [], 10, '', **kwargs_grad)
 kwargs_xgrad = {"objective" : "reg:squarederror", "eval_metric" : "mae", "learning_rate" : .09, "max_depth" : 5, 
                 "colsample_bytree" : .9, "min_split_loss" : 0.0, "colsample_bylevel" : 1, "lambda" : 0.5}
 xgrad = ModelDefinition('xg_boost', [], 5, 'week', 0, True, '', **kwargs_xgrad)

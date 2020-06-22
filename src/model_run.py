@@ -254,6 +254,7 @@ class ModelRun:
         If contains "month" then use month.
         If contains "hour" then use hour.
         If solar_geometry is empty then use month and hour.
+        If contains "age" then use age of the system
         """
 
         if len(self.solar_geometry) == 0:
@@ -289,6 +290,8 @@ class ModelRun:
             self.features['clear_s'] = self.features[irr_cols[0]] / get_extra_radiation(self.features.index) * \
                 np.sin(np.radians(get_solarposition(self.features.index, self.lat, self.lon).apparent_elevation))\
                     .rolling(window=2).mean()
+        if 'age' in self.solar_geometry: # calculate the age of the system from an arbitrary date 
+            self.features = self.features.assign(age=[x.days for x in self.features.index.date - datetime.date(2014, 1, 1)]) 
 
     def __limit_datetimes(self):
         """ Method which removes the datetimes not requested or with missing data, and

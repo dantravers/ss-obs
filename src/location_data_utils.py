@@ -10,8 +10,8 @@ import json
 import holidays
 from ss_utilities.generic_tools import haversine_np
 
-def get_fcst_locs(site_list, filename='C:\\Users\\DanTravers\\Documents\\dbs\\weather\\ecmwf\\ecmwf2016-01-02T00%3A00%3A00.nc', n=1):
-    """Function to find the lat/lon of the closest n forecast grid points to every site in ss_list.
+def get_fcst_locs(site_list, filename='/home/dtravers/winhome/Documents/dbs/weather/ecmwf_new/ecmwf2016-01-02T00.nc', n=1):
+    """Function to find the lat/lon of the closest n forecast grid points to every site in ss_list. # 
 
     Parameters
     ----------
@@ -30,7 +30,9 @@ def get_fcst_locs(site_list, filename='C:\\Users\\DanTravers\\Documents\\dbs\\we
 
     data = xr.open_dataset(filename)
     f_loc = pd.DataFrame([], index = pd.MultiIndex.from_product((data.latitude.data, data.longitude.data), names=['latitude', 'longitude']))
-    return(cross_locations(site_list, f_loc, n))
+    temp_loc = cross_locations(site_list, f_loc, n)
+    temp_loc['f_id'] = temp_loc.latitude.map(str) + ':' + temp_loc.longitude.map(str)
+    return(temp_loc)
 
 def cross_locations(primary, secondary, n=4):
     """ Function to find the n closest secondary locations to each primary location.
@@ -90,7 +92,7 @@ def read_netcdf_file(filename, filepath, locations):
 
     file = os.path.join(filepath, filename)
     forecast_base = timezone('UTC').localize(datetime.datetime.strptime(filename[5:-3], '%Y-%m-%dT%H'))
-    
+
     loc_dic = { 'latitude' : locations.latitude.unique(), \
                'longitude' : locations.longitude.unique()}
     DS = xr.open_dataset(file)
@@ -102,7 +104,7 @@ def read_netcdf_file(filename, filepath, locations):
     dt = dsel.t2m - 273.15
     du = dsel.u10
     dv = dsel.v10
-    df = xr.concat([di, dt, du, dv], pd.Index(['irr', 'temp', 'u', 'v'], name='variable')).to_series()
+    df = xr.concat([di, dt, du, dv], pd.Index(['irr', 'temp', 'u', 'v'], name='variable')).copy().to_series()
     # tidy up to ensure merge works:
     loc_temp = locations.set_index(['latitude', 'longitude'])
     loc_temp.drop(loc_temp.iloc[:, :], axis=1, inplace=True) # create df with just the index being lat/lon and no columns.

@@ -50,7 +50,7 @@ class ModelDefinition:
         The scikit learn estimator with parameters set.
     """
 
-    def __init__(self, ml_model='linear_r', grouped_by=[], no_folds=0, cross_val_grp = '', \
+    def __init__(self, ml_model='linear_r', grouped_by=[], no_folds=0, cross_val_grp='week', \
                 max_runs=0, shuffle=True, text='', **kwargs):
         self.ml_model = ml_model
         self.grouped_by = grouped_by
@@ -111,6 +111,8 @@ class ModelDefinition:
             grouping = pd.DataFrame(index=df.index).assign(grp=df.index.week)
         elif self.cross_val_grp == 'month':
             grouping = pd.DataFrame(index=df.index).assign(grp=df.index.month)
+        elif self.cross_val_grp == 'year':
+            grouping = pd.DataFrame(index=df.index).assign(grp=df.index.year)
         else:
             print("Grouping of cross-validation isn't supported in model_definition.")
         return(grouping)
