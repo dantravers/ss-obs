@@ -333,6 +333,7 @@ class ModelRun:
         else: 
             self.myprint('Daylight hours attribute is not valid.', 1)
         self.__remove_zero_outturn(.005)
+        self.__remove_large_outturn(1.5)
         self.target = pd.DataFrame(self.features['outturn'].sort_index())
         self.features = self.features.drop('outturn', axis=1).sort_index()
         self.myprint("Joined observations: {}. Restricted datetimes: {}".format(no_joined, len(self.features)), 3)
@@ -363,6 +364,16 @@ class ModelRun:
         self.features = self.features.drop('irr', axis=1)
         removed = rows - self.features.shape[0]
         self.myprint("Removed {} zeros ({}%)".format(removed, round(100*removed/rows,2)), 3)
+
+    def __remove_large_outturn(self, percent=1.5):
+        # removes the largest extreme values
+        # removes the records from the dataset where the outturn is greater than the percent times
+        # the average of the 10th to 20th largest values.  
+        rows = self.features.shape[0]
+        too_large = self.features.outturn.nlargest(20)[-10:].mean() * percent
+        self.features.drop(self.features[self.features.outturn > too_large].index, inplace=True)
+        removed = rows = self.features.shape[0]
+        self.myprint("Removed {} very large outturn values ({}%)".format(removed, round(100*removed/rows,2)), 3)        
 
     def __add_lagged_data(self):
         """ Method to create lagged and rolling average features on weather data.
