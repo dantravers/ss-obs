@@ -41,17 +41,14 @@ def main():
 
     # netcdf_file locations:
     config = configparser.ConfigParser()
-    if wsl=='wsl':
-        config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/wforecast_lx.ini'))
-    else:
-        config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/wforecast.ini'))
+    config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),'config/wforecast_lx.ini'))
     netcdf_path = config['query_settings']['path']
     location_ref_filename = config['query_settings']['location_ref_filename']
     location_ref = os.path.join(netcdf_path, location_ref_filename)
 
     # start / end dates
     s = datetime.datetime(2015, 1, 1).date()
-    e = datetime.datetime(2020, 7, 1).date()
+    e = datetime.datetime(2020, 6, 1).date()
     goto_db = ''
 
     # ml model setup
