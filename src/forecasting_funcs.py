@@ -121,7 +121,10 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
     DataFrame with one row with the statistics from the Model Run as columns.
     DataFrame with the (hourly) results. 
     """
-    location_slice = power.obs.loc[ss_id, :]
+    try:
+        location_slice = power.obs.loc[ss_id, :]
+    except:
+        location_slice = pd.DataFrame([])
     if location_slice[ start : end ].shape[0] > 0:
         run= mr.ModelRun([ss_id], 
                         [w_id], 
