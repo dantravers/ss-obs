@@ -48,7 +48,7 @@ def main():
 
     # start / end dates
     s = datetime.datetime(2015, 1, 1).date()
-    e = datetime.datetime(2020, 6, 1).date()
+    e = datetime.datetime(2015, 2, 1).date()
     goto_db = ''
 
     # ml model setup
@@ -94,7 +94,7 @@ def main():
                                                                 ['irr', 'u', 'v', 'temp'], # these need to be modified if using Midas vs ECMWF (irr, temp, u, v) weather
                                                                 [10], 
                                                                 goto_db, 'None', 2)
-                tstats = tstats.append(temp_stats)
+                tstats = tstats.append(temp_stats, sort=False)
                 if days_ahead[i]=='1':
                     print(i, days_ahead[i])
                     if i==0:

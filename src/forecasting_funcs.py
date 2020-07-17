@@ -121,35 +121,40 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
     DataFrame with one row with the statistics from the Model Run as columns.
     DataFrame with the (hourly) results. 
     """
-    run= mr.ModelRun([ss_id], 
-                    [w_id], 
-                    power, weather,
-                    model, 
-                    start, end, 
-                    forecast_days_ahead=forecast_days_ahead, 
-                    lagged_variables=lags,
-                    daylight_hours=daylight_hours,
-                    solar_geometry=solar,
-                    feature_list=feature_list,
-                    goto_db=goto_db, 
-                    goto_file=goto_file,
-                    verbose=verbose)
-    run.cross_validate(False)
-    timestamp = datetime.datetime.now().replace(microsecond=0)
-    temp = run.stats_.iloc[0:1].copy()
-    temp['model'] = model.ml_model
-    for entry in lags:
-        for feature in lags[entry]: 
-            temp['lags'] = entry[0:1]+'-'+feature[0:3]+'-'+str(lags[entry][feature])
-    temp['w_id'] = w_id
-    temp['ss_id'] = ss_id
-    """grpd = ''
-    for word in model.grouped_by:
-        grpd += word[0:1]
-    temp['grouped'] = grpd"""
-    temp['days_ahead'] = forecast_days_ahead
-    temp['run'] = timestamp
-    res = pd.concat([run.results_], keys=[timestamp], names=['run'])[['forecast', 'outturn']]
-    res.loc[:, 'ss_id'] = ss_id
-    res = res.set_index('ss_id', append=True).reorder_levels([0, 2, 1], axis=0)
+    location_slice = power.obs.loc[ss_id, :]
+    if location_slice[ start : end ].shape[0] > 0:
+        run= mr.ModelRun([ss_id], 
+                        [w_id], 
+                        power, weather,
+                        model, 
+                        start, end, 
+                        forecast_days_ahead=forecast_days_ahead, 
+                        lagged_variables=lags,
+                        daylight_hours=daylight_hours,
+                        solar_geometry=solar,
+                        feature_list=feature_list,
+                        goto_db=goto_db, 
+                        goto_file=goto_file,
+                        verbose=verbose)
+        run.cross_validate(False)
+        timestamp = datetime.datetime.now().replace(microsecond=0)
+        temp = run.stats_.iloc[0:1].copy()
+        temp['model'] = model.ml_model
+        for entry in lags:
+            for feature in lags[entry]: 
+                temp['lags'] = entry[0:1]+'-'+feature[0:3]+'-'+str(lags[entry][feature])
+        temp['w_id'] = w_id
+        temp['ss_id'] = ss_id
+        """grpd = ''
+        for word in model.grouped_by:
+            grpd += word[0:1]
+        temp['grouped'] = grpd"""
+        temp['days_ahead'] = forecast_days_ahead
+        temp['run'] = timestamp
+        res = pd.concat([run.results_], keys=[timestamp], names=['run'])[['forecast', 'outturn']]
+        res.loc[:, 'ss_id'] = ss_id
+        res = res.set_index('ss_id', append=True).reorder_levels([0, 2, 1], axis=0)
+    else:
+        temp = pd.DataFrame({'ss_id' : ss_id, 'count' : 0}, index=[0])
+        res = pd.DataFrame([])
     return(temp, res)

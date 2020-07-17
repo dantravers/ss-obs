@@ -161,7 +161,10 @@ class ModelRun:
             cap = self.target_capacity * 1000
         else:
             cap = self.target.iloc[:,0].max()
-        self.stats_ = generate_error_stats(assign_month_hour(self.results_), cap, self.power_data.epex, self.power_data.sbsp, splits=False)
+        if self.results_.shape[0] > 0:
+            self.stats_ = generate_error_stats(assign_month_hour(self.results_), cap, self.power_data.epex, self.power_data.sbsp, splits=False)
+        else: 
+            pass
 
     def populate_wh(self):
         """ Populates the weather data object with requested data."""
