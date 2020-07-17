@@ -128,6 +128,7 @@ class WForecast(Midas):
                     load_count = 0
                     for file in os.listdir(path):
                         if datetime.datetime.strptime(file[5:-3], '%Y-%m-%dT%H').date() in date_list: 
+                            self.myprint("Loading weather from {}.".format(file), 3)
                             day = read_netcdf_file(file, path, locations)
                             load_count += len(day)
                             if self.obs.shape[0]==0:
@@ -145,7 +146,7 @@ class WForecast(Midas):
                         self.metadata = self.metadata.append(new_metadata)
                         self.metadata = self.metadata[~self.metadata.index.duplicated(keep='first')]
                 else:
-                    self.myprint("goto_file parameter must be 'Cache', 'File' or 'None'", 0)
+                    self.myprint("goto_file parameter must be 'Cache' or 'File'", 0)
 
 
     def get_obs(self, days_ahead = 1, freq='1H'):

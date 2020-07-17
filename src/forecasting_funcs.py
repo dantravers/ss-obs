@@ -70,7 +70,7 @@ def x_val_results(ss_id, w_id, power, weather, model, start, end, forecast_days_
     return(temp)
 
 def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_days_ahead, \
-          lags, solar, feature_list=[], daylight_hours='', goto_db='Never', goto_file='File', verbose=2):
+          lags, solar, feature_list=[], daylight_hours=[10], goto_db='Never', goto_file='File', verbose=2):
     """
     Function to return the key statistics of the cross-validation AND the results at the timestep level.
     Runs on a single ss_id taking either weather forecast data or actual observed weather data as input.

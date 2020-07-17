@@ -50,19 +50,19 @@ def main():
     location_ref = os.path.join(netcdf_path, location_ref_filename)
 
     # start / end dates
-    s = datetime.datetime(2016, 1, 1).date()
-    e = datetime.datetime(2016, 1, 10).date()
+    s = datetime.datetime(2015, 1, 1).date()
+    e = datetime.datetime(2020, 7, 1).date()
     goto_db = ''
 
     # ml model setup
     kwargs_empty = {}
     lr = ModelDefinition('linear_r', ['month', 'hour'], 5, **kwargs_empty, text='Mth-Hr split')
     kwargs_grad = {"n_estimators": 100, "learning_rate" : 0.1, "max_depth" : 5, "random_state" : 0, "loss" : "ls"}
-    grad = ModelDefinition('g_boost', [], 5, 'dayofyear', **kwargs_grad)
+    grad = ModelDefinition('g_boost', [], 5, 'week', **kwargs_grad) 
     kwargs_xgrad = {"objective" : "reg:squarederror", "eval_metric" : "mae", "learning_rate" : .06, "max_depth" : 6, 
                 "colsample_bytree" : .9, "min_split_loss" : 0.0, "colsample_bylevel" : 1, "lambda" : 0.5, 
-               "min_child_weight" : 4, "n_estimators" : 130, "gamma" : 0, "subsample" : 0.9, "reg_alpha" : 100}
-    xgrad = ModelDefinition('xg_boost', [], 5, 'dayofyear', 0, True, '', **kwargs_xgrad)
+               "min_child_weight" : 3, "n_estimators" : 130, "gamma" : 0, "subsample" : 0.9, "reg_alpha" : 100}
+    xgrad = ModelDefinition('xg_boost', [], 5, 'week', 0, True, '', **kwargs_xgrad)
     
     with open(ss_file, 'r') as f:
         ss_list = f.readlines()
@@ -94,7 +94,7 @@ def main():
                                                                 i, \
                                                                 lags, \
                                                                 ['dayofyear', 'hour'], 
-                                                                ['irr', 'u', 'v', 'temp'], # these need to be modified if using Midas vs ECMWF weather
+                                                                ['irr', 'u', 'v', 'temp'], # these need to be modified if using Midas vs ECMWF (irr, temp, u, v) weather
                                                                 [10], 
                                                                 goto_db, 'None', 2)
                 tstats = tstats.append(temp_stats)

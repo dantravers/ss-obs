@@ -259,6 +259,8 @@ class ModelRun:
 
         if len(self.solar_geometry) == 0:
             self.features = assign_month_hour(self.features)
+        if len(self.features) == 0:
+            self.myprint("No rows in features dataframe.", 1)
         if 'month' in self.solar_geometry:
             self.features = self.features.assign(month=self.features.index.shift(-1, freq='h').month)
         if 'dayofyear' in self.solar_geometry: # this outperforms the month feature often and can replace it 
