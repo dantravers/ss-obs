@@ -37,7 +37,7 @@ def generate_error_stats(result, cap, epex=None, sbsp=None, splits=True):
         no_zeros_result = result.groupby(['month', 'hour']).filter(lambda x: x['outturn'].sum()>0)
         stat_temp = stat_temp.append(no_zeros_result.groupby(['month', 'hour']).\
                                  apply(stats, (cap, epex, sbsp)).reset_index(), ignore_index=True)
-    return(stat_temp[['month', 'hour', 'count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_val', 'Rsqd']])
+    return(stat_temp[['month', 'hour', 'cap_used', 'count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_val', 'Rsqd']])
 
 def stats(df, cap, epex=None, sbsp=None):
     """ Function to return statistics suite of errors of forecast-actual.
@@ -92,6 +92,7 @@ def stats(df, cap, epex=None, sbsp=None):
         hrly_val = np.nan
     # all other statistics
     return(pd.DataFrame( {
+                       'cap_used' : cap, 
                        'count': count, 
                        'MBE': MBE, 
                        'MAE': MAE, 
@@ -105,7 +106,7 @@ def stats(df, cap, epex=None, sbsp=None):
                         'hrly_val' : np.around(hrly_val, decimals=3), 
                         'Rsqd': Rsqd
                         }, 
-                        columns = ['count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_val', 'Rsqd'],
+                        columns = ['cap_used', 'count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_val', 'Rsqd'],
                         index=[0]) )
 
 def heatmap_summary_stats(run_stats):

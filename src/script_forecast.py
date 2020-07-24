@@ -36,6 +36,8 @@ def main():
         raise(Exception)
     if len(sys.argv) > 3:
         days_ahead = sys.argv[3] + '0000'
+    else:
+        days_ahead= '000000'
 
     wsl = "" if len(sys.argv) <= 4 else sys.argv[4]
 
@@ -48,7 +50,7 @@ def main():
 
     # start / end dates
     s = datetime.datetime(2015, 1, 1).date()
-    e = datetime.datetime(2015, 2, 1).date()
+    e = datetime.datetime(2020, 7, 1).date()
     goto_db = ''
 
     # ml model setup

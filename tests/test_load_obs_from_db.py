@@ -49,8 +49,8 @@ def test_load_pvstream_obs_from_db():
     power = pw.Power(1)
     power.load_data([3111, 6730], s, e,  goto_db='Always')
 
-    pd.testing.assert_frame_equal(power.metadata, power_metadata_bench)
-    pd.testing.assert_frame_equal(power.obs, power_obs_bench)
+    pd.testing.assert_frame_equal(power.metadata.sort_index(), power_metadata_bench.sort_index())
+    pd.testing.assert_frame_equal(power.obs.sort_index(), power_obs_bench.sort_index())
 
 def test_load_additional_midas_obs_from_db():
     s = datetime.datetime(2016, 12, 31).date() 

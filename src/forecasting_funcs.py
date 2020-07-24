@@ -123,9 +123,10 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
     """
     try:
         location_slice = power.obs.loc[ss_id, :]
+        no_rows = location_slice[ start : end ].shape[0]
     except:
-        location_slice = pd.DataFrame([])
-    if location_slice[ start : end ].shape[0] > 0:
+        no_rows = 0
+    if no_rows > 0:
         run= mr.ModelRun([ss_id], 
                         [w_id], 
                         power, weather,
@@ -142,22 +143,23 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
         run.cross_validate(False)
         timestamp = datetime.datetime.now().replace(microsecond=0)
         temp = run.stats_.iloc[0:1].copy()
-        temp['model'] = model.ml_model
+        temp['w_id'] = w_id
+        temp['ss_id'] = ss_id
+        """temp['model'] = model.ml_model
         for entry in lags:
             for feature in lags[entry]: 
                 temp['lags'] = entry[0:1]+'-'+feature[0:3]+'-'+str(lags[entry][feature])
-        temp['w_id'] = w_id
-        temp['ss_id'] = ss_id
-        """grpd = ''
+        grpd = ''
         for word in model.grouped_by:
             grpd += word[0:1]
         temp['grouped'] = grpd"""
         temp['days_ahead'] = forecast_days_ahead
         temp['run'] = timestamp
+        temp = temp[['ss_id', 'count', 'run', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'hrly_val', 'lg_over', 'lg_under', 'cap_used', 'w_id', 'days_ahead']]
         res = pd.concat([run.results_], keys=[timestamp], names=['run'])[['forecast', 'outturn']]
         res.loc[:, 'ss_id'] = ss_id
         res = res.set_index('ss_id', append=True).reorder_levels([0, 2, 1], axis=0)
     else:
-        temp = pd.DataFrame({'ss_id' : ss_id, 'count' : 0}, index=[0])
+        temp = pd.DataFrame({'ss_id' : ss_id, 'count' : 0, 'run' : datetime.datetime.now().replace(microsecond=0)}, index=[0])
         res = pd.DataFrame([])
     return(temp, res)
