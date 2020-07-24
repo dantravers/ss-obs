@@ -103,10 +103,6 @@ class Power(SiteData):
         meta_cols = [x.strip() for x in query_config['ss_id_metadata_object_cols'].split(',')]
         meta = pd.DataFrame(self.dbc.query(select_sql), columns=meta_cols)
         if len(meta)>0:
-            """meta[(meta.ss_id >= int(query_config['enphase_min'])) & (meta.ss_id < int(query_config['enphase_max']))]\
-            ['orientation'] = meta['orientation_assessed'] # ** this gives a warning about applying to slide of df. 
-            meta[(meta.ss_id >= int(query_config['enphase_min'])) & (meta.ss_id < int(query_config['enphase_max']))]\
-            ['tilt'] = meta['tilt_assessed']"""   # ** this gives a warning about applying to slide of df. 
             meta.loc[(meta.ss_id >= int(query_config['enphase_min'])) & (meta.ss_id < int(query_config['enphase_max'])), 'orientation']\
             = meta.loc[(meta.ss_id >= int(query_config['enphase_min'])) & (meta.ss_id < int(query_config['enphase_max'])), 'orientation_assessed'] # ** this gives a warning about applying to slide of df. 
             meta.loc[(meta.ss_id >= int(query_config['enphase_min'])) & (meta.ss_id < int(query_config['enphase_max'])), 'tilt']\
