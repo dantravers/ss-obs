@@ -3,12 +3,19 @@
 import os
 from pytz import timezone
 import datetime
+import numpy as np
 import pandas as pd
 import power as pw
 import xarray as xr
 import json
 import holidays
 from ss_utilities.generic_tools import haversine_np
+from functools import partial
+import multiprocessing as mp
+import fiona
+import cartopy.io.shapereader as shpreader
+import shapely.geometry as sgeom
+from shapely.prepared import prep
 
 def get_fcst_locs(site_list, filename='/home/dtravers/winhome/Documents/dbs/weather/ecmwf_new/ecmwf2016-01-02T00.nc', n=1):
     """Function to find the lat/lon of the closest n forecast grid points to every site in ss_list. # 
@@ -168,3 +175,108 @@ def apply_weekday(df, type='grouped', dummies=True):
         df.drop('weekday', axis=1, inplace=True)
     df.columns = df.columns.astype(str)
     return(df)
+
+def hdist(lat1, long1, lat2, long2):
+    """
+    Calculates haversine distance
+    """
+    R = 6371 #distances in km
+    la1 = lat1 * np.pi / 180
+    la2 = lat2 * np.pi / 180
+    lo1 = long1 * np.pi / 180
+    lo2 = long2 * np.pi / 180
+    return np.arccos( np.sin(la1) * np.sin(la2) + np.cos(la1) * np.cos(la2) * np.cos(lo2 - lo1)) * R
+
+def delta_lat(d): # calculates the number of degrees of latitude given distance in km
+    R = 6371
+    return(np.arcsin(d / R) * 180 / np.pi)
+
+def delta_lon(d, lat): # calculates the number of degrees of longitude given the distance in km, and latitude.
+    R = 6371
+    return(np.arcsin(d / (R * np.cos(lat * np.pi / 180))) * 180 / np.pi)
+
+def geoavg(lat, lon, data, radius, p=1):
+    """ 
+    Function to return the inverse-distance weighted average of the observations
+    at a specified lat-lon point within a circle of radius radius.
+    Parameters
+    ----------
+    lat : float
+    lon : float
+    data : obj:Series
+        Series indexed by lat, lon, containing the observations
+    radius : float
+        Circle size (rather than square) within which we gather points    
+    p : integer
+        The inverse power - 1 is linear, 2 quadratic...
+    """
+    max_lat = lat + delta_lat(radius)
+    min_lat = lat - delta_lat(radius)
+    max_lon = lon + delta_lon(radius, lat)
+    min_lon = lon - delta_lon(radius, lat)
+    subset = pd.DataFrame(data.loc[min_lat : max_lat, min_lon : max_lon]).reset_index()
+    data_name = data.name
+    if len(subset) == 0:
+        avg = np.nan
+    else:
+        subset['dist'] = subset.apply(lambda ser: (hdist(ser[0], ser[1], lat, lon)), axis=1, raw=True)
+        subset['inv_dist'] = subset['dist']**(-1*p)
+        subset = subset[subset['dist'] < radius]
+        if len(subset) == 0:
+            avg = np.nan
+        else:
+            avg = np.average(subset[data_name], weights = subset['inv_dist'])
+    return(avg)
+
+def geo_tuple(loc, data, radius, p):
+    return(geoavg(loc[0], loc[1], data, radius, p))
+
+# define function to determine if point is on land:
+geoms = fiona.open(shpreader.natural_earth(resolution='50m', category='physical', name='land'))
+land_geom = sgeom.MultiPolygon([sgeom.shape(geom['geometry']) for geom in geoms])
+land = prep(land_geom)
+
+def is_land(lon, lat):
+    return land.contains(sgeom.Point(lon, lat))
+
+def create_grid(lat_min, lat_max, lon_min, lon_max, lat_squares, lon_squares, results, metric, radius, power):
+    """
+    Function creates a grid of points across the bounded area and
+    interpolates the metric from a unevenly distributed sample set onto the grid.
+    User inverse-distance weighted average.
+    ----------
+    lat_min : float
+        Bound of the gridded area.
+    lat_max : float
+    lon_min : float
+    lon_max : float
+    lat_squares: int
+        Number of squares across the latitude.
+    lon_squares : int
+        Number of squares acrsoss the longitude.
+    results : obj:DataFrame
+        DataFrame containing columns "lat", "lon" and the metric (named next parameter).
+        DataFrame contains all the raw result observations, and do not lie on a grid.
+    metric : str
+        The name of the metric - must be one of the column names of 'results'.
+    radius : 
+        Circle size within which we average the points    
+    p : integer
+        The inverse power - 1 is linear, 2 quadratic...
+    """    
+    t0 = datetime.datetime.now()
+    results = results.set_index(['lat', 'lon'], drop=True)[metric]
+    results.sort_index(level=['lat','lon'], inplace=True)
+    uk_idx = pd.MultiIndex.from_product([np.linspace(lat_min, lat_max, np.int(lat_squares)), np.linspace(lon_min, lon_max, np.int(lon_squares))], names=['lat','lon'])
+    uk_grid = pd.DataFrame([], index=uk_idx)
+    uk_grid = uk_grid.sort_index()
+    uk_grid = uk_grid.reset_index()
+    uk_grid['land'] = uk_grid.apply(lambda x: is_land(x.lon, x.lat), axis=1) # vectorized land apply.
+    f_part = partial(geo_tuple, data=results, radius=radius, p=power)
+    with mp.Pool(12) as p:
+        uk_grid.loc[uk_grid.land, 'PV'] = np.array(p.map(f_part, uk_grid.loc[uk_grid.land].values))
+    uk_grid = uk_grid.set_index(['lat', 'lon'])
+    #uk_grid = uk_grid.interpolate()
+    uk_grid.loc[uk_grid.land == False, 'PV'] = np.nan 
+    print(datetime.datetime.now() - t0)
+    return(uk_grid)

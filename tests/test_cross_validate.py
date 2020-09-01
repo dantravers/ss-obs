@@ -55,6 +55,7 @@ def test_cross_validate():
         run1.cross_validate(False)
         # test the results are equal for 2 ML models
         file_name = os.path.join(data_dir, "bench_results_" + model.ml_model + model.cross_val_grp + ".csv" )
+        #to replace with new stats file: run1.results_.to_csv(file_name)
         print(file_name)
         bench_results = pd.read_csv(file_name, index_col=0, parse_dates=True)
         print("Testing model results: {}, {}".format(model.ml_model, model.cross_val_grp))
@@ -71,8 +72,8 @@ def test_cross_validate():
     print("Testing stats:")
     print(tstats)
     print(bench_stats)
-    tstats.to_csv('tstats_test.csv')
-    bench_stats.to_csv('bench_stats_test.csv')
+    #tstats.to_csv('tstats_test.csv')
+    #bench_stats.to_csv('bench_stats_test.csv')
     pd.testing.assert_frame_equal(tstats, bench_stats)
 
 def test_add_lagged_features():
