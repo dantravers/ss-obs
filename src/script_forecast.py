@@ -49,8 +49,8 @@ def main():
     location_ref = os.path.join(netcdf_path, location_ref_filename)
 
     # start / end dates
-    s = datetime.datetime(2017, 1, 1).date()
-    e = datetime.datetime(2018, 2, 1).date()
+    s = datetime.datetime(2015, 1, 1).date()
+    e = datetime.datetime(2020, 7, 1).date()
     goto_db = ''
 
     # ml model setup
