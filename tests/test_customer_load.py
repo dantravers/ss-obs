@@ -13,23 +13,15 @@ import power as pw
 if os.name == 'nt':
     data_dir = 'C:/Users/DanTravers/Documents/GitHub/ss-obs/tests/test_data'
 else:
-    data_dir = '/home/dtravers/winhome/Documents/GitHub/ss-obs/tests/test_data'
+    data_dir = '/mnt/c/Users/dantravers/Documents/GitHub/ss-obs/tests/test_data'
 # setup dates and Load data
 start = datetime.date(2016,1,1)
 end = datetime.date(2018, 1, 1)
 xls_filename = "customer_load_test.xlsx"
 csv_filename = "112233445566.csv"
 
-def test_customer_excel_load():
-    load = pw.Load(2)    
-    load.load_from_file(os.path.join(data_dir, xls_filename))
-    # test metadata is correct
-    # test observation data is correct
-    bench = pd.read_csv(os.path.join(data_dir, 'bench_customer_load_obs.csv'), index_col=[0, 1], parse_dates=True)
-    pd.testing.assert_frame_equal(load.obs, bench)
-
 def test_customer_csv_obs_load():
-    load = pw.Load(2)    
+    load = pw.Load(2)
     load.load_from_file(os.path.join(data_dir, csv_filename), customer='test')
     # test observation data is correct
     bench = pd.read_csv(os.path.join(data_dir, 'bench_customer_112233445566_obs.csv'), index_col=[0, 1], parse_dates=True)

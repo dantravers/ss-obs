@@ -4,7 +4,7 @@
     "python.testing.pytestArgs": [
         "tests"
     ],
-    "python.pythonPath": "/home/dtravers/anaconda3/envs/pgwn37min/bin/python",
+    "python.pythonPath": "/home/dtravers/anaconda3/envs/pgwn39min/bin/python",
     "python.testing.unittestArgs": [
         "-v",
         "-s",

@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from location_data_utils import create_grid
 
-testdir = '/home/dtravers/winhome/Documents/GitHub/ss-obs/tests/test_data/'
+testdir = '/mnt/c/Users/dantravers/Documents/GitHub/ss-obs/tests/test_data/'
 
 def test_create_grid():
     res = pd.read_csv(os.path.join(testdir, 'create_grid_raw_results.csv'), dayfirst=True, index_col=0)

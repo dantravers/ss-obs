@@ -19,7 +19,7 @@ from location_data_utils import (cross_locations, get_fcst_locs,
 if os.name == 'nt':
     data_dir = 'C:/Users/DanTravers/Documents/GitHub/ss-obs/tests/test_data'
 else:
-    data_dir = '/home/dtravers/winhome/Documents/GitHub/ss-obs/tests/test_data'
+    data_dir = '/mnt/c/Users/dantravers/Documents/GitHub/ss-obs/tests/test_data'
 netcdf_dir = os.path.join(data_dir, 'netcdf')
 netcdf_file = 'ecmwf2016-01-02T00.nc'
 site_list = pd.read_csv(os.path.join(data_dir, 'site_list.csv'))

@@ -58,7 +58,7 @@ class WForecast(Midas):
         self.forecast_max_days_ahead = int(self.config['query_settings']['forecast_max_days_ahead'])
         self.path = self.config['query_settings']['path']
 
-    def load_data(self, locations, path='/home/dtravers/winhome/Documents/dbs/weather/ecmwf_new', \
+    def load_data(self, locations, path='/mnt/c/Users/dantravers/Documents/dbs/weather/ecmwf_new', \
         start_date=None, end_date=datetime.datetime.now().date(), goto_file='Cache'):
         """ Method to load observations from netCDF files or cache for specified date range into object.
         Method populates data in self.obs dataframe and metadata is derived.

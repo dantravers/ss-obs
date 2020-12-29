@@ -17,7 +17,7 @@ import cartopy.io.shapereader as shpreader
 import shapely.geometry as sgeom
 from shapely.prepared import prep
 
-def get_fcst_locs(site_list, filename='/home/dtravers/winhome/Documents/dbs/weather/ecmwf_new/ecmwf2016-01-02T00.nc', n=1):
+def get_fcst_locs(site_list, filename='/mnt/c/Users/dantravers/Documents/dbs/weather/ecmwf_new/ecmwf2016-01-02T00.nc', n=1):
     """Function to find the lat/lon of the closest n forecast grid points to every site in ss_list. # 
 
     Parameters

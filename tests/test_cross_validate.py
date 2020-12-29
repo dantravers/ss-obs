@@ -18,7 +18,7 @@ from model_definition import ModelDefinition
 if os.name == 'nt':
     data_dir = 'C:/Users/DanTravers/Documents/GitHub/ss-obs/tests/test_data'
 else:
-    data_dir = '/home/dtravers/winhome/Documents/GitHub/ss-obs/tests/test_data'
+    data_dir = '/mnt/c/Users/dantravers/Documents/GitHub/ss-obs/tests/test_data'
 # setup model definitions: 
 kwargs_empty = {}
 lr = ModelDefinition('linear_r', ['month', 'hour'], 10, '', **kwargs_empty, text='Mth-Hr split')
@@ -56,7 +56,6 @@ def test_cross_validate():
         # test the results are equal for 2 ML models
         file_name = os.path.join(data_dir, "bench_results_" + model.ml_model + model.cross_val_grp + ".csv" )
         #to replace with new stats file: run1.results_.to_csv(file_name)
-        print(file_name)
         bench_results = pd.read_csv(file_name, index_col=0, parse_dates=True)
         print("Testing model results: {}, {}".format(model.ml_model, model.cross_val_grp))
         run1.results_ = run1.results_.astype( {"forecast": np.float64} )
