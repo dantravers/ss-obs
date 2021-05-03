@@ -76,15 +76,8 @@ def stats(df, cap, epex=None, sbsp=None):
     # statistic on the price impact of forecast errors - this does inner merge on df, so you lose some points -->
     # don't do before other stats!
     if (epex is not None) & (sbsp is not None):
-        initial_len = len(df)
-        df = pd.merge(df, epex, how='inner', left_index=True, right_index=True)
-        df = pd.merge(df, sbsp, how='inner', left_index=True, right_index=True)
-        if len(df) < initial_len/2:
-            print('Prices present for less than half the forecasted points.  Still calcualting statistics.') # ** should be myprint, verbosity=2
-        df['hedge'] = df.forecast * df.price / 1000
-        df['cash_out'] = (df.outturn - df.forecast) * df.ssp / 1000
-        df['value'] = df.hedge  + df.cash_out
-        cash_loss_pct = df.sum()['cash_out'] / df['hedge'].sum() * 100 #sign -ve for losses in generation, +ve for losses in load.
+        df = add_financial_cols(df, epex, sbsp)
+        cash_loss_pct = df.sum()['cash_out'] / df['hedge'].sum() * 100   #!! THIS IS THE WRONG STATISTIC - REPLACE WITH MEAN OF fcst_loss!!
         hrly_val = (df.sum()['hedge'] + df.sum()['cash_out']) / len(df)
     else:
         print('Required prices passed to x-validation, so not calculating price-based statistics.')# ** myprint, verbosity=3
@@ -108,6 +101,23 @@ def stats(df, cap, epex=None, sbsp=None):
                         }, 
                         columns = ['cap_used', 'count', 'MBE', 'MAE', 'RMSE', 'cash_pct', 'lg_over', 'lg_under', 'wMBE', 'wMAE', 'wRMSE', 'hrly_val', 'Rsqd'],
                         index=[0]) )
+
+def add_financial_cols(df, epex, sbsp):
+    initial_len = len(df)
+    df = pd.merge(df, epex, how='inner', left_index=True, right_index=True)
+    df = pd.merge(df, sbsp, how='inner', left_index=True, right_index=True)
+    if len(df) < initial_len/2:
+        print('Prices present for less than half the forecasted points.  Still calcualting statistics.')
+    # ** should be myprint, verbosity=2df['hedge'] = df.forecast * df.price / 1000
+    df['diff'] = df.forecast - df.outturn
+    df['price_diff'] = df.price - df.ssp
+    df['perfect'] = df.outturn * df.price / 1000
+    df['hedge'] = df.forecast * df.price / 1000
+    df['cash_out'] = (df.outturn - df.forecast) * df.ssp / 1000
+    df['fcst_loss'] = df['diff'] * df.price_diff / 1000
+    # df['value'] = df['hedge']  + df['cash_out'] - replaced old formula with equivalent below
+    df['value'] = df.perfect  + df.fcst_loss
+    return(df)
 
 def heatmap_summary_stats(run_stats):
     pass
