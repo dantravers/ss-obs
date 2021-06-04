@@ -4,6 +4,8 @@ import datetime
 from datetime import timedelta
 import pandas as pd
 import numpy as np
+from location_data_utils import apply_weekday
+
 #import matplotlib.pyplot as plt
 #import seaborn as sns
 
@@ -151,4 +153,43 @@ def set_month_hour(df):
     
     df = df.assign(hour=df.index.hour)
     df = df.assign(month=df.index.shift(-1, freq='h').month)
+    return(df)
+
+def value_factor(df, power):
+    # calculate value_factor and cv_value_factor values on raw results
+    # df is assumed to have columns for datetime, outturn, forecast, price, ssp
+    
+    value_fac = gen_wtd_avg = time_wtd = fwd_cv_wtd = fwd_cv_fac = np.nan
+    df.set_index('datetime', inplace=True)
+    if (len(df) >= 30):
+        df = df.assign(date=pd.to_datetime(df.index.date))
+        # get daily average prices for each date in prce history and merge with hourly detail data
+        daily_avg_prices = power.epex.groupby(power.epex.index.floor('d')).mean()
+        df = pd.merge(df, daily_avg_prices['price'], how='inner', left_on='date', right_index=True, suffixes=('', '_avg'))
+        # calculate the time weighted prices for each site (denominator in value factor)   
+        #  where we take into account only the days on which the site generates 
+        time_wtd = df.groupby(df.index.floor('d'))['price_avg'].mean().mean()
+        # generation weighted prices (numerator in value factor formula)
+        gen_wtd_avg = np.average(df.price, weights=df.outturn)
+        # create value factor df: 
+        value_fac = gen_wtd_avg / time_wtd * 100
+        
+        #Forward curve weighted price aggregation
+        prices = apply_fwd_curve_cols(power.epex)
+        df = apply_fwd_curve_cols(df)
+        grouped_df = pd.merge(df.groupby(['weekday', 'month', 'hour'])['outturn'].mean().reset_index(),\
+                              prices.groupby(['weekday', 'month', 'hour'])['price'].mean().reset_index(), \
+                              how='left', on=['weekday', 'month', 'hour'])
+        fwd_cv_wtd = np.average(grouped_df['price'], weights=grouped_df['outturn'])
+        fwd_cv_fac = fwd_cv_wtd / time_wtd * 100
+    else:
+        print('Prices present for less than 30.  Not calculating statistics.') # ** should be myprint, verbosity=2
+    return( pd.Series([value_fac, time_wtd, gen_wtd_avg, fwd_cv_wtd, fwd_cv_fac], 
+                      index=['value_factor', 'time_wtd_prc', 'gen_wtd_prc', 'fwd_cv_wtd_prc', 'fwd_cv_fac'])
+          )
+
+def apply_fwd_curve_cols(df):
+    df = apply_weekday(df, 'grouped_we', False)
+    df = df.assign(month = df.index.month)
+    df = df.assign(hour = df.index.hour)
     return(df)

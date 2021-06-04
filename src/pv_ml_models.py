@@ -63,7 +63,7 @@ def cross_validate(X, y, model_def):
         else:
             if len(np.unique(model_def.cross_val_grp_labels(X).values)) >= model_def.no_folds:
                 kf = GroupKFold(n_folds)
-                arr = cross_val_predict(model_def.model, X.values, y.values, model_def.cross_val_grp_labels(X).values, cv=kf)
+                arr = cross_val_predict(model_def.model, X.values, y.values, groups=model_def.cross_val_grp_labels(X).values, cv=kf)
                 raw_predict = pd.DataFrame({'forecast': arr,
                                         'outturn': y},
                                         index=y.index)
