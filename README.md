@@ -1,2 +1,2 @@
 # ss-obs
-Package for accessing Sheffield Solar observation data.
+Package for accessing PV observation data & forecasting PV generation.
