@@ -128,7 +128,7 @@ def read_netcdf_file(filename, filepath, locations):
     out_frame['ahead'] = out_frame.index.get_level_values(1).date - out_frame.index.get_level_values(0).date
     out_frame = out_frame.reorder_levels([2, 0, 1])
     out_frame.set_index('ahead', append=True, inplace=True)
-    out_frame.index.rename('datetime', 2, inplace=True)
+    out_frame.x.rename('datetime', 2, inplace=True)
     return(out_frame)
 
 def populate_generic_dno_licence_region_locations(meta_df):
