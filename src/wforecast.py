@@ -167,7 +167,7 @@ class WForecast(Midas):
         if freq=='1H':
             if len(self.obs)>0:
                 idx = pd.IndexSlice
-                self.obs.sort_index(level = [0, 1, 2, 3], inplace=True)
+                self.obs.sort_index(level = [0, 1, 2, 3], inplace=True) # Performance improvement - comment out if pre-sorted. 
                 df = self.obs.loc[idx[:, :, :, timedelta(days_ahead)], :].reset_index(['fcst_base', 'ahead'], drop=True)
                 df.irr = df.irr.diff() # take diff.  This needs to be reconsidered for the forecast 4 days out, where hour steps up in 3's
                 # remove the NaN in first entry and the negative values when you to from one forecast base to the next:

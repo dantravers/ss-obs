@@ -26,7 +26,7 @@ def main():
     arg3 : the forecast_day_ahead: two binary digits, each representing (by position) 
             if day 0 or day 1 details are output to file E.g. 01 is output just day 1 ahead details
     arg4 : "wsl", if it is running in wsl, so it picks up correct config files.  Or missing.
-    """ 
+    """
 
     # input ss_ids.list and output files
     if len(sys.argv) > 2:

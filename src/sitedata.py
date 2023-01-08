@@ -182,7 +182,7 @@ class SiteData:
                     if site_start < first_date:
                         self.load_obs_db(site_id, site_start, first_date)
                     if last_date < site_end:
-                        self.load_obs_db(site_id, last_date, site_end)           
+                        self.load_obs_db(site_id, last_date, site_end)
                 try:
                     check_missing_hours(self.obs.loc[site_id].tz_localize(None).\
                         loc[site_start.strftime('%Y%m%d'):(site_end-timedelta(1)).strftime('%Y%m%d')],\
@@ -209,12 +209,12 @@ class SiteData:
         site_id : int
             src_id being queried
         start_date : date
-            Start date from which to load in data.  Loads data including and above start date.  
+            Start date from which to load in data.  Loads data including and above start date.
         end_date : date
             End date from which to load in data.  Loads data up to but not including end date
         graph : Boolean
-            Denotes if should generate a graph of the number of observations per day loaded.  
-            Graph allows user to see where missing observations are.  
+            Denotes if should generate a graph of the number of observations per day loaded.
+            Graph allows user to see where missing observations are.
             When loading many sites however graphing consumes memory and can be confusing.
         """
         # Graph to show the daily data gathered from the db

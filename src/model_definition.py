@@ -108,7 +108,7 @@ class ModelDefinition:
         if self.cross_val_grp == 'dayofyear':
             grouping = pd.DataFrame(index=df.index).assign(grp=df.index.dayofyear)
         elif self.cross_val_grp == 'week':
-            grouping = pd.DataFrame(index=df.index).assign(grp=df.index.week)
+            grouping = pd.DataFrame(index=df.index).assign(grp=pd.Int64Index(df.index.isocalendar().week))
         elif self.cross_val_grp == 'month':
             grouping = pd.DataFrame(index=df.index).assign(grp=df.index.month)
         elif self.cross_val_grp == 'year':
