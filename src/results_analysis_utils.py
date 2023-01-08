@@ -18,8 +18,13 @@ class FcstDetails:
         self.res['value_kwp'] = (self.res.perfect + self.res.fcst_loss) / self.res.kWp
         self.res['fcst_loss_kwp'] = self.res.fcst_loss / self.res.kWp
 
-    def get(self, ss_id):
-        return(self.data.loc[:, ss_id])
+    def get(self, ss_ids, data_col=""):
+        dataset = self.data.loc[:, ss_ids].copy()
+        if data_col!="":
+            dataset = dataset.loc[:, (slice(None), ['diff'])]
+            #dataset.columns = dataset.columns.droplevel(1)
+        return(dataset)
+
 
     def get_rich(self, ss_id):
         df = self.get(ss_id).copy()
@@ -59,7 +64,7 @@ def get_ss_id_data_list(ss_ids, DATA=WINHOME+"/Documents/dbs/fcst_runs/2020_07/"
     for ss_id in ss_ids:
         file_id = catalogue[catalogue.ss_id==ss_id].iloc[0, 2]
         resfile = "{}_results_res1.csv".format(file_id)
-        df = pd.read_csv(os.path.join(DATA, resfile), parse_dates=['run'], dayfirst=True, index_col=0)
+        df = pd.read_csv(os.path.join(DATA, resfile), parse_dates=['run', 'datetime'], dayfirst=True, index_col=0)
         df = df.set_index('datetime')
         df = df[df.ss_id==ss_id]
         df = add_financial_cols(df, power.epex, power.sbsp)

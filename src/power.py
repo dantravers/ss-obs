@@ -207,7 +207,7 @@ class Power(SiteData):
                 pvout.drop(['outturnhh'], axis=1, inplace=True)
                 pvout = pvout.dropna()
             elif self.stored_as == '1H':
-                pvout=self.obs.dropna()
+                pvout=self.obs.dropna() # Performance - comment out if no nans
             else:
                 self.myprint('Stored as 30m PV data and requested frequency not supported.', 1)
         if (freq == '30m') & (self.stored_as == '30m'): 
@@ -251,7 +251,7 @@ class Power(SiteData):
     def _load_wide_data_to_obs(self, wide_data, site_id, start_date, end_date):
         pvflat = wide_data.set_index(['site_id', 'date'],drop=True).stack().reset_index()
         pvflat = pvflat.rename(columns={'hours' : 'level_2'})    # to cater for values from csv loading of power load values
-        pvflat['hh'] = pvflat.apply(lambda ser: float(ser['level_2'][1:]), axis=1)
+        pvflat['hh'] = pvflat.apply(lambda ser: float(ser['level_2'][1:]), axis=1) # Performance improvement: convert this to times while it's the column headers, then stack after. 
         pvflat['mins'] = pvflat.hh * 30
         pvflat['datetime'] = pvflat.apply(lambda x: x['date'] + datetime.timedelta(minutes = x['mins']), axis=1)
         pvflat.rename(index = {}, columns = {0: 'outturn'}, inplace=True)

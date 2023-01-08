@@ -193,7 +193,7 @@ class ModelRun:
         if len(self.power_list) < 1:
            self.myprint("No sites in power list.", 1)
         if len(self.power_list) == 1:  # for a single power site, the target is just that series.
-            self.target = df.xs(self.power_list, level='site_id', axis=0)
+            self.target = df.xs(tuple(self.power_list), level='site_id', axis=0)
             self.target_capacity = self.power_data.metadata.loc[self.power_list[0], 'kWp']
             self.lat = self.power_data.metadata.loc[self.power_list[0], 'latitude']
             self.lon = self.power_data.metadata.loc[self.power_list[0], 'longitude']
@@ -224,9 +224,10 @@ class ModelRun:
         # copy weather data into features attributes, taking 5 extra days either side for used in lagged features
         # below overly complex line is what I currently have.  Feels like I should be able to do the line above, or 
         # something simpler.
-        if len(self.wh_data.get_obs(self.forecast_days_ahead)) == 0: 
+        w_data = self.wh_data.get_obs(self.forecast_days_ahead)
+        if len(w_data) == 0: 
             self.myprint("Error: No observations in the weather dataset passed in", 1)
-        self.features = self.wh_data.get_obs(self.forecast_days_ahead).loc[self.wh_list, :].reset_index(level=0).tz_localize(None).\
+        self.features = w_data.loc[self.wh_list, :].reset_index(level=0).tz_localize(None).\
             loc[(self.start_date-timedelta(5)).strftime('%Y%m%d'): (self.end_date+timedelta(5)).strftime('%Y%m%d')]\
                 .set_index('site_id', append=True).swaplevel()
         # find columns to drop first, then add lagged features, then drop columns:
