@@ -124,7 +124,7 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
     """
     try:
         location_slice = power.obs.loc[ss_id, :]
-        no_rows = location_slice[ pytz.utc.localize(start) : pytz.utc.localize(end) ].shape[0]
+        no_rows = location_slice[ pytz.utc.localize(datetime.datetime.combine( start, datetime.datetime.min.time())) : pytz.utc.localize(datetime.datetime.combine( end, datetime.datetime.min.time())) ].shape[0]
     except:
         no_rows = 0
     if no_rows > 0:

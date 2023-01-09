@@ -146,7 +146,7 @@ class Power(SiteData):
         if (self.power_type == '30min_PV') & (self.stored_as == '30m'):
             self.__load_ss30_db(site_id, start_date, end_date)
         else:
-            self.myprint('Unsupported power_type in Power object or data has been resampled in memory - start with new object if loading from db.', 1)
+            self.myprint('Unsupported power_type in Power object or data has been resampled in memory - start with new object if loading from db.', 3)
         super(Power, self).load_obs_db(site_id, start_date, end_date, graph)
 
     def save_to_hdf(self):
