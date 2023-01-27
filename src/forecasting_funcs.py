@@ -2,9 +2,6 @@ import datetime
 import pytz
 import pandas as pd
 import model_run as mr
-import power as pw
-import midas as md
-import wforecast as wf
 
 def x_val_results(ss_id, w_id, power, weather, model, start, end, forecast_days_ahead, \
           lags, solar, goto_db='Never', goto_file='File', verbose=2):
@@ -127,7 +124,7 @@ def x_val_results_plus(ss_id, w_id, power, weather, model, start, end, forecast_
         no_rows = location_slice[ pytz.utc.localize(datetime.datetime.combine( start, datetime.datetime.min.time())) : pytz.utc.localize(datetime.datetime.combine( end, datetime.datetime.min.time())) ].shape[0]
     except:
         no_rows = 0
-    if no_rows > 0:
+    if (no_rows > 0) & (power.obs.outturn.sum()>0):
         run= mr.ModelRun([ss_id],
                         [w_id],
                         power, weather,

@@ -191,7 +191,7 @@ class ModelRun:
         """
         df = self.power_data.get_obs(self.observation_freq).copy()
         if len(self.power_list) < 1:
-           self.myprint("No sites in power list.", 1)
+            self.myprint("No sites in power list.", 1)
         if len(self.power_list) == 1:  # for a single power site, the target is just that series.
             self.target = df.xs(tuple(self.power_list), level='site_id', axis=0)
             self.target_capacity = self.power_data.metadata.loc[self.power_list[0], 'kWp']
@@ -339,7 +339,8 @@ class ModelRun:
         else: 
             self.myprint('Daylight hours attribute is not valid.', 1)
         self.__remove_zero_outturn(.005)
-        self.__remove_large_outturn(1.5)
+        if self.features['outturn'].sum()>0:
+            self.__remove_large_outturn(1.5)
         self.target = pd.DataFrame(self.features['outturn'].sort_index())
         self.features = self.features.drop('outturn', axis=1).sort_index()
         self.myprint("Joined observations: {}. Restricted datetimes: {}".format(no_joined, len(self.features)), 3)
